@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* CutBuddy design system — see DESIGN.md for full spec */
+  --color-page: #f6f6f9;
+  --color-surface: #ffffff;
+  --color-ink: #16121f;
+  --color-muted: #6b6b7a;
+  --color-border: #e7e6ee;
+
+  --color-hero-bg: #130d22;
+  --color-hero-bg-2: #1d1433;
+
+  --color-accent: #6c4ff0;
+  --color-accent-dark: #5a3fdb;
+  --color-accent-light: #ede9fe;
+
+  --color-star: #6c4ff0;
+  --color-danger: #e0446c;
+
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-micro: 150ms;
+  --duration-standard: 300ms;
+  --duration-entrance: 500ms;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-hero-bg: var(--color-hero-bg);
+  --color-hero-bg-2: var(--color-hero-bg-2);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-light: var(--color-accent-light);
+  --color-danger: var(--color-danger);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html, body {
+  background: var(--color-page);
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.hero-gradient {
+  background: radial-gradient(120% 100% at 20% 0%, var(--color-hero-bg-2) 0%, var(--color-hero-bg) 60%);
+}
+
+.fade-up {
+  animation: fade-up var(--duration-entrance) var(--ease-entrance) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(100deg, rgba(22, 18, 31, 0.05) 30%, rgba(22, 18, 31, 0.09) 45%, rgba(22, 18, 31, 0.05) 60%);
+  background-size: 250% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -20% 0; }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

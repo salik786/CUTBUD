@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local sqlite dev database — not usable in production (serverless has no
+# persistent filesystem); see DESIGN.md for the Supabase Postgres migration
+# note in prisma/schema.prisma
+prisma/dev.db
+prisma/dev.db-journal

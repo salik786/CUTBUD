@@ -1,0 +1,151 @@
+// Local dev datasource. Swap provider to "postgresql" and DATABASE_URL to a
+// Supabase connection string once the flow has been tested end to end.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Shop {
+  id            String   @id @default(uuid())
+  name          String
+  address       String
+  entryQrToken  String   @unique
+  exitQrToken   String   @unique
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  visits        Visit[]
+  savedCuts     SavedCut[]
+  ratings       Rating[]
+
+  @@map("shops")
+}
+
+model Visit {
+  id                   String    @id @default(uuid())
+  shopId               String
+  shop                 Shop      @relation(fields: [shopId], references: [id])
+  deviceSessionToken   String
+  selectedGenerationId String?
+  selectedGeneration   StyleGeneration? @relation("SelectedGeneration", fields: [selectedGenerationId], references: [id])
+  startedAt            DateTime  @default(now())
+  completedAt          DateTime?
+  ratedAt              DateTime?
+
+  generations          StyleGeneration[] @relation("VisitGenerations")
+  rating               Rating?
+  hairProfile          UserHairProfile?
+
+  @@map("visits")
+}
+
+model StyleCatalog {
+  id           String   @id @default(uuid())
+  name         String
+  description  String
+  basePrompt   String
+  faceShapeFit String // comma-separated, e.g. "oval,square"
+  guardNumber  String?
+  lengthMm     String?
+  fadeType     String?
+  imageUrl     String?
+  active       Boolean  @default(true)
+
+  generations  StyleGeneration[]
+
+  @@map("style_catalog")
+}
+
+model StyleGeneration {
+  id              String   @id @default(uuid())
+  visitId         String
+  visit           Visit    @relation("VisitGenerations", fields: [visitId], references: [id])
+  styleCatalogId  String
+  styleCatalog    StyleCatalog @relation(fields: [styleCatalogId], references: [id])
+  frontImageUrl   String
+  sideImageUrl    String
+  backImageUrl    String
+  instructionText String
+  generatedAt     DateTime @default(now())
+
+  selectedByVisits Visit[]  @relation("SelectedGeneration")
+  savedCuts        SavedCut[]
+
+  @@map("style_generations")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  phoneNumber   String?  @unique
+  oauthProvider String?
+  oauthId       String?
+  createdAt     DateTime @default(now())
+
+  savedCuts     SavedCut[]
+
+  @@map("users")
+}
+
+model SavedCut {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  styleGenerationId  String
+  styleGeneration    StyleGeneration @relation(fields: [styleGenerationId], references: [id])
+  shopId             String?
+  shop               Shop?    @relation(fields: [shopId], references: [id])
+  note               String?
+  savedAt            DateTime @default(now())
+
+  @@map("saved_cuts")
+}
+
+model Rating {
+  id             String   @id @default(uuid())
+  visitId        String   @unique
+  visit          Visit    @relation(fields: [visitId], references: [id])
+  shopId         String
+  shop           Shop     @relation(fields: [shopId], references: [id])
+  stars          Int
+  beforeImageUrl String?
+  afterImageUrl  String?
+  comment        String?
+  createdAt      DateTime @default(now())
+
+  @@map("ratings")
+}
+
+// AI Hair Analysis result for a visit. The raw selfie is never uploaded or
+// stored server-side (analysis runs client-side against a mock service for
+// now) — only the derived profile persists, consistent with the privacy
+// commitment made elsewhere in the product ("we don't store your photo").
+model UserHairProfile {
+  id                String   @id @default(uuid())
+  visitId           String?  @unique
+  visit             Visit?   @relation(fields: [visitId], references: [id])
+
+  faceShape         String
+  faceConfidence    Float
+  faceLength        String
+  jawline           String
+  forehead          String
+
+  hairType          String
+  hairDensity       String
+  hairThickness     String
+  hairline          String
+  hairTexture       String
+  hairDirection     String
+  hairVolume        String
+
+  recommendedStyles String // comma-separated
+  avoidStyles       String // comma-separated
+
+  createdAt         DateTime @default(now())
+
+  @@map("user_hair_profiles")
+}
