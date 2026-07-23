@@ -1,8 +1,9 @@
-// Local dev datasource. Swap provider to "postgresql" and DATABASE_URL to a
-// Supabase connection string once the flow has been tested end to end.
+// Production datasource: Supabase Postgres. DATABASE_URL is set per-
+// environment (local .env for dev, Vercel project env vars for deploys).
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
