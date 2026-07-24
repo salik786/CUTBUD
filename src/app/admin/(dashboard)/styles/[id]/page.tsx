@@ -34,6 +34,11 @@ export default async function EditStylePage({ params }: { params: Promise<{ id: 
           backImageUrl: style.backImageUrl ?? "",
           displayAngle: style.displayAngle,
           inspiredBy: style.inspiredBy ?? "",
+          frontPrompt: style.frontPrompt ?? "",
+          leftPrompt: style.leftPrompt ?? "",
+          rightPrompt: style.rightPrompt ?? "",
+          backPrompt: style.backPrompt ?? "",
+          tryonPrompt: style.tryonPrompt ?? "",
           active: style.active,
         }}
       />

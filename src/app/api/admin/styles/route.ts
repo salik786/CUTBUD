@@ -37,6 +37,11 @@ export async function POST(req: NextRequest) {
     backImageUrl,
     displayAngle,
     inspiredBy,
+    frontPrompt,
+    leftPrompt,
+    rightPrompt,
+    backPrompt,
+    tryonPrompt,
   } = body;
 
   if (!name || !description || !basePrompt || !faceShapeFit) {
@@ -69,6 +74,11 @@ export async function POST(req: NextRequest) {
       backImageUrl,
       displayAngle: displayAngle || "front",
       inspiredBy,
+      frontPrompt,
+      leftPrompt,
+      rightPrompt,
+      backPrompt,
+      tryonPrompt,
     },
   });
   return NextResponse.json({ style });

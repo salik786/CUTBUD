@@ -69,6 +69,18 @@ model StyleCatalog {
   inspiredBy   String? // credit shown on the cut card, e.g. a barber/stylist name
   active       Boolean  @default(true)
 
+  // AI image-generation prompts (one per angle, plus a customer try-on
+  // variant), authored in the spreadsheet's Prompts sheet and synced in
+  // alongside the rest of the metadata. Shown read-only in the admin form
+  // next to each angle's uploader so generating in Higgsfield and uploading
+  // the result is a copy/generate/upload loop instead of hunting through a
+  // separate spreadsheet.
+  frontPrompt  String?
+  leftPrompt   String?
+  rightPrompt  String?
+  backPrompt   String?
+  tryonPrompt  String?
+
   generations  StyleGeneration[]
 
   @@map("style_catalog")

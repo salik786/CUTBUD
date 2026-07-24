@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { STYLE_ANGLES, type StyleAngle } from "@/lib/styleImage";
@@ -29,6 +29,11 @@ export interface StyleFormValues {
   backImageUrl: string;
   displayAngle: string;
   inspiredBy: string;
+  frontPrompt: string;
+  leftPrompt: string;
+  rightPrompt: string;
+  backPrompt: string;
+  tryonPrompt: string;
   active: boolean;
 }
 
@@ -54,6 +59,11 @@ const EMPTY: StyleFormValues = {
   backImageUrl: "",
   displayAngle: "front",
   inspiredBy: "",
+  frontPrompt: "",
+  leftPrompt: "",
+  rightPrompt: "",
+  backPrompt: "",
+  tryonPrompt: "",
   active: true,
 };
 
@@ -65,11 +75,18 @@ const BEARD_PAIRING_OPTIONS = ["None", "Optional", "Required"];
 const OCCASION_OPTIONS = ["Daily", "Professional", "Party", "Casual"];
 const AUDIENCE_OPTIONS = ["Gen Z", "Professionals", "Students"];
 
-const ANGLE_URL_KEY: Record<StyleAngle, keyof StyleFormValues> = {
+const ANGLE_URL_KEY: Record<StyleAngle, "imageUrl" | "leftImageUrl" | "rightImageUrl" | "backImageUrl"> = {
   front: "imageUrl",
   left: "leftImageUrl",
   right: "rightImageUrl",
   back: "backImageUrl",
+};
+
+const ANGLE_PROMPT_KEY: Record<StyleAngle, "frontPrompt" | "leftPrompt" | "rightPrompt" | "backPrompt"> = {
+  front: "frontPrompt",
+  left: "leftPrompt",
+  right: "rightPrompt",
+  back: "backPrompt",
 };
 
 export function StyleForm({ initial }: { initial?: StyleFormValues }) {
@@ -124,31 +141,35 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 flex max-w-xl flex-col gap-4">
+    <form onSubmit={submit} className="mt-6 flex max-w-3xl flex-col gap-4">
       <div>
         <label className="text-xs font-semibold uppercase tracking-wide text-muted">Photos</label>
-        <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
-            <p className="mb-1.5 text-xs text-muted">Front</p>
-            <ImageUploader value={values.imageUrl} onChange={(url) => set("imageUrl", url)} />
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs text-muted">Left</p>
-            <ImageUploader value={values.leftImageUrl} onChange={(url) => set("leftImageUrl", url)} />
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs text-muted">Right</p>
-            <ImageUploader value={values.rightImageUrl} onChange={(url) => set("rightImageUrl", url)} />
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs text-muted">Back</p>
-            <ImageUploader value={values.backImageUrl} onChange={(url) => set("backImageUrl", url)} />
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-muted">
-          Only Front is required — any angle left empty shows as pending on the cut card.
+        <p className="mt-1 text-xs text-muted">
+          Generate each angle in Higgsfield using the prompt shown, then upload the result here.
+          Left/right/back prompts reference the front image so the same model/haircut stays
+          consistent across all 4 angles. Only Front is required — any angle left empty shows as
+          pending on the cut card.
         </p>
+        <div className="mt-3 flex flex-col gap-3">
+          {STYLE_ANGLES.map(({ value, label }) => (
+            <div key={value} className="flex gap-4 rounded-xl border border-border bg-surface p-3">
+              <div className="w-32 shrink-0">
+                <p className="mb-1.5 text-xs font-semibold text-muted">{label}</p>
+                <ImageUploader
+                  value={values[ANGLE_URL_KEY[value]]}
+                  onChange={(url) => set(ANGLE_URL_KEY[value], url)}
+                />
+              </div>
+              <PromptField
+                value={values[ANGLE_PROMPT_KEY[value]]}
+                onChange={(v) => set(ANGLE_PROMPT_KEY[value], v)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
+
+      <PromptField label="Try-on prompt (customer selfie)" value={values.tryonPrompt} onChange={(v) => set("tryonPrompt", v)} />
 
       <div>
         <label className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -388,6 +409,55 @@ function SelectField({
         ))}
       </select>
     </label>
+  );
+}
+
+function PromptField({
+  label,
+  value,
+  onChange,
+}: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  async function copy() {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard permission denied/unavailable — select the text instead
+      // so the user can still copy it manually (Cmd/Ctrl+C).
+      textareaRef.current?.select();
+    }
+  }
+
+  return (
+    <div className="flex-1">
+      <div className="mb-1.5 flex items-center justify-between">
+        {label && <p className="text-xs font-semibold text-muted">{label}</p>}
+        <button
+          type="button"
+          onClick={copy}
+          disabled={!value}
+          className="ml-auto rounded-full border border-border bg-page px-2.5 py-1 text-xs font-medium text-muted hover:bg-accent-light disabled:opacity-40"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="No prompt synced for this angle yet"
+        className="min-h-24 w-full rounded-xl border border-border bg-page px-3 py-2 text-xs leading-relaxed text-ink/80 outline-none focus:border-accent"
+      />
+    </div>
   );
 }
 
