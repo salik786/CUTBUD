@@ -29,11 +29,21 @@ export function SwipeDeck({
   faceShape,
   filter,
   q,
+  texture,
+  length,
+  maintenance,
+  premium,
+  sort,
 }: {
   visitId: string;
   faceShape?: string;
   filter?: string;
   q?: string;
+  texture?: string;
+  length?: string;
+  maintenance?: string;
+  premium?: boolean;
+  sort?: string;
 }) {
   const [styles, setStyles] = useState<StyleCatalog[]>([]);
   const [index, setIndex] = useState(0);
@@ -53,6 +63,11 @@ export function SwipeDeck({
     if (faceShape) params.set("faceShape", faceShape);
     if (filter) params.set("filter", filter);
     if (q) params.set("q", q);
+    if (texture) params.set("texture", texture);
+    if (length) params.set("length", length);
+    if (maintenance) params.set("maintenance", maintenance);
+    if (premium) params.set("premium", "1");
+    if (sort) params.set("sort", sort);
     return params.toString();
   }
 

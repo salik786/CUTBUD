@@ -14,6 +14,11 @@ export function StyleGrid({
   faceShape,
   filter,
   q,
+  texture,
+  length,
+  maintenance,
+  premium,
+  sort,
   pageSize,
 }: {
   visitId: string;
@@ -22,6 +27,11 @@ export function StyleGrid({
   faceShape?: string;
   filter?: string;
   q?: string;
+  texture?: string;
+  length?: string;
+  maintenance?: string;
+  premium?: boolean;
+  sort?: string;
   pageSize: number;
 }) {
   const [styles, setStyles] = useState(initialStyles);
@@ -39,6 +49,11 @@ export function StyleGrid({
       if (faceShape) params.set("faceShape", faceShape);
       if (filter) params.set("filter", filter);
       if (q) params.set("q", q);
+      if (texture) params.set("texture", texture);
+      if (length) params.set("length", length);
+      if (maintenance) params.set("maintenance", maintenance);
+      if (premium) params.set("premium", "1");
+      if (sort) params.set("sort", sort);
       const res = await fetch(`/api/styles/recommendations?${params}`);
       const data = await res.json();
       setStyles((prev) => [...prev, ...data.styles]);
@@ -51,37 +66,37 @@ export function StyleGrid({
 
   return (
     <>
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
         {styles.map((style, i) => (
           <div
             key={style.id}
-            className="fade-up group relative overflow-hidden rounded-2xl border border-border bg-surface transition-shadow duration-200 hover:shadow-lg"
+            className="fade-up group relative overflow-hidden rounded-[20px] bg-surface shadow-sm transition-shadow duration-200 hover:shadow-md"
             style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}
           >
             <GenerateStyleLink visitId={visitId} styleCatalogId={style.id}>
               <PhotoPlaceholder
                 src={getDisplayImageUrl(style)}
-                className="aspect-square w-full rounded-none"
+                className="aspect-[3/4] w-full rounded-none"
                 sizes="(max-width: 640px) 50vw, 340px"
                 objectPosition="top"
               />
-              <div className="p-3">
-                <p className="truncate text-sm font-semibold">{style.name}</p>
-                <p className="text-xs text-muted">{style.fadeType ?? style.description}</p>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
+                <p className="truncate text-[13px] font-semibold text-white">{style.name}</p>
               </div>
             </GenerateStyleLink>
             <FavoriteButton className="absolute right-2 top-2" />
+            {style.featured && (
+              <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-accent">
+                ⭐ Premium
+              </span>
+            )}
           </div>
         ))}
 
         {loading &&
           Array.from({ length: 2 }).map((_, i) => (
-            <div key={`skeleton-${i}`} className="overflow-hidden rounded-2xl border border-border bg-surface">
-              <div className="skeleton-shimmer aspect-square w-full" />
-              <div className="p-3">
-                <div className="h-4 w-3/4 animate-pulse rounded bg-border" />
-                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-border" />
-              </div>
+            <div key={`skeleton-${i}`} className="overflow-hidden rounded-[20px] bg-surface">
+              <div className="skeleton-shimmer aspect-[3/4] w-full" />
             </div>
           ))}
       </div>
@@ -91,7 +106,7 @@ export function StyleGrid({
           type="button"
           onClick={loadMore}
           disabled={loading}
-          className="mt-6 w-full rounded-xl border border-border bg-surface px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 w-full rounded-2xl border border-border bg-surface px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Loading…" : "Load More Styles"}
         </button>

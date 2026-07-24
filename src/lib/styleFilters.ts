@@ -27,21 +27,44 @@ export function buildStyleWhere({
   faceShape,
   filter,
   q,
+  texture,
+  length,
+  maintenance,
+  premium,
 }: {
   faceShape?: string;
   filter?: string;
   q?: string;
+  texture?: string;
+  length?: string;
+  maintenance?: string;
+  premium?: boolean;
 }): Prisma.StyleCatalogWhereInput {
   const clauses: Prisma.StyleCatalogWhereInput[] = [];
   if (faceShape) clauses.push({ faceShapeFit: { contains: faceShape, mode: "insensitive" } });
   if (filter) clauses.push(keywordClause(filter));
   if (q) clauses.push(keywordClause(q));
+  if (texture) clauses.push({ textureCompat: { contains: texture, mode: "insensitive" } });
+  if (length) clauses.push({ lengthCategory: { equals: length, mode: "insensitive" } });
+  if (maintenance) clauses.push({ maintenance: { equals: maintenance, mode: "insensitive" } });
+  if (premium) clauses.push({ featured: true });
 
   return clauses.length ? { active: true, AND: clauses } : { active: true };
 }
 
-// Category pills shown above the grid — kept to terms that actually appear
-// in style names/fade types/face-shape tags today, so no pill is a dead end.
+export type StyleSort = "default" | "trending" | "recent";
+
+export function buildStyleOrderBy(
+  sort?: string
+): Prisma.StyleCatalogOrderByWithRelationInput[] {
+  if (sort === "trending") return [{ trendScore: "desc" }, { name: "asc" }];
+  if (sort === "recent") return [{ createdAt: "desc" }];
+  return [{ name: "asc" }];
+}
+
+// Category pills shown in the filter sheet — kept to terms that actually
+// appear in style names/fade types/face-shape tags today, so no pill is a
+// dead end.
 export const STYLE_FILTERS = [
   { label: "All", keyword: "" },
   { label: "Skin Fade", keyword: "skin fade" },
@@ -52,3 +75,7 @@ export const STYLE_FILTERS = [
   { label: "Curly", keyword: "curly" },
   { label: "Crop", keyword: "crop" },
 ];
+
+export const TEXTURE_FILTERS = ["Straight", "Wavy", "Curly", "Coily"];
+export const LENGTH_FILTERS = ["Very Short", "Short", "Medium", "Long"];
+export const MAINTENANCE_FILTERS = ["Low", "Medium", "High"];
