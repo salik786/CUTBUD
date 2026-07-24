@@ -2,17 +2,16 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Stepper } from "@/components/Stepper";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { SecondaryButton } from "@/components/SecondaryButton";
 import { BackLink } from "@/components/BackLink";
 
 export default async function IntakePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const visit = await prisma.visit.findUnique({ where: { id }, include: { shop: true } });
+  const visit = await prisma.visit.findUnique({ where: { id } });
   if (!visit) notFound();
 
   return (
     <main className="mx-auto flex w-full max-w-[520px] flex-1 flex-col px-6 py-8">
-      <BackLink href={`/v/${visit.shop.entryQrToken}`} />
+      <BackLink href={`/v/${visit.id}/recommendations`} />
 
       <div className="mt-4">
         <Stepper step={1} />
@@ -50,9 +49,8 @@ export default async function IntakePage({ params }: { params: Promise<{ id: str
         ))}
       </div>
 
-      <div className="fade-up mt-8 flex flex-col gap-3" style={{ animationDelay: "260ms" }}>
+      <div className="fade-up mt-8" style={{ animationDelay: "260ms" }}>
         <PrimaryButton href={`/v/${visit.id}/scan`}>Start Hair Analysis</PrimaryButton>
-        <SecondaryButton href={`/v/${visit.id}/recommendations`}>Explore Hairstyles</SecondaryButton>
       </div>
 
       <p className="fade-up mt-5 text-center text-xs leading-relaxed text-muted" style={{ animationDelay: "300ms" }}>
