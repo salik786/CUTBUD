@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { BackLink } from "@/components/BackLink";
 import { buildStyleWhere } from "@/lib/styleFilters";
 import { FilterBar } from "./FilterBar";
-import { StyleGrid } from "./StyleGrid";
+import { ViewSwitcher } from "./ViewSwitcher";
 
 const PAGE_SIZE = 6;
 
@@ -80,7 +80,7 @@ export default async function RecommendationsPage({
           No styles match{q ? ` “${q}”` : " that filter"}. Try a different search or filter.
         </p>
       ) : (
-        <StyleGrid
+        <ViewSwitcher
           key={`${filter ?? ""}|${q ?? ""}|${matched}`}
           visitId={visit.id}
           initialStyles={styles}

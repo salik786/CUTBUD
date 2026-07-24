@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Next 16 requires every `quality` value passed to next/image to be
+    // declared here — PhotoPlaceholder defaults to 90 (sharper than the
+    // framework default of 75) for style/hero photos.
+    qualities: [75, 90],
     // AI-generated style/hero photos are served as full-size (~4MB, 2048px)
     // originals from this CDN — letting next/image optimize them (resize +
     // re-encode to WebP/AVIF) instead of serving them raw is the single
