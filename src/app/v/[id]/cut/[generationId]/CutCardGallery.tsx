@@ -22,6 +22,9 @@ export function CutCardGallery({
           src={mainSrc}
           label={`${selected} reference`}
           className="mx-auto aspect-[4/3] w-full"
+          sizes="(max-width: 768px) 100vw, 720px"
+          objectPosition="top"
+          priority
         />
         {mainSrc && (
           <button
@@ -48,7 +51,12 @@ export function CutCardGallery({
               selected === angle ? "ring-2 ring-accent ring-offset-2 ring-offset-page" : ""
             }`}
           >
-            <PhotoPlaceholder src={images[angle]} className="aspect-square w-full" />
+            <PhotoPlaceholder
+              src={images[angle]}
+              className="aspect-square w-full"
+              sizes="(max-width: 640px) 25vw, 170px"
+              objectPosition="top"
+            />
             <span className="absolute inset-x-0 bottom-0 bg-ink/60 py-0.5 text-center text-[9px] uppercase tracking-wide text-white">
               {angle}
             </span>

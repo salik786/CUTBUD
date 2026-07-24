@@ -37,6 +37,8 @@ export default async function HistoryPage() {
                 <PhotoPlaceholder
                   src={cut.styleGeneration.styleCatalog.imageUrl}
                   className="h-14 w-14 shrink-0"
+                  sizes="56px"
+                  objectPosition="top"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{cut.styleGeneration.styleCatalog.name}</p>

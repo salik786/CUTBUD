@@ -42,6 +42,8 @@ export default async function LibraryPage() {
                 <PhotoPlaceholder
                   src={cut.styleGeneration.styleCatalog.imageUrl}
                   className="aspect-square w-full rounded-none"
+                  sizes="(max-width: 640px) 50vw, 340px"
+                  objectPosition="top"
                 />
                 <div className="p-3">
                   <p className="truncate text-sm font-semibold">{cut.styleGeneration.styleCatalog.name}</p>

@@ -2,13 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Pill } from "@/components/Pill";
-import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
-import { FavoriteButton } from "@/components/FavoriteButton";
-import { SecondaryButton } from "@/components/SecondaryButton";
 import { BackLink } from "@/components/BackLink";
-import { GenerateStyleLink } from "./GenerateStyleLink";
+import { StyleGrid } from "./StyleGrid";
 
 const FILTERS = ["All", "Trending", "Low Fade", "Curly", "Classic"];
+const PAGE_SIZE = 6;
 
 export default async function RecommendationsPage({
   params,
@@ -20,17 +18,32 @@ export default async function RecommendationsPage({
   const { id } = await params;
   const { faceShape } = await searchParams;
 
+  const matchedWhere = faceShape
+    ? { active: true, faceShapeFit: { contains: faceShape, mode: "insensitive" as const } }
+    : { active: true };
+
   // Independent queries — run in parallel instead of one after another to
-  // cut the round-trip time in half.
-  const [visit, allStyles] = await Promise.all([
+  // cut the round-trip time in half. Only the first page loads server-side;
+  // StyleGrid fetches subsequent pages on demand instead of preloading the
+  // whole catalog.
+  const [visit, matchedStyles, matchedTotal] = await Promise.all([
     prisma.visit.findUnique({ where: { id }, include: { shop: true } }),
-    prisma.styleCatalog.findMany({ where: { active: true }, take: 6 }),
+    prisma.styleCatalog.findMany({ where: matchedWhere, take: PAGE_SIZE, orderBy: { name: "asc" } }),
+    prisma.styleCatalog.count({ where: matchedWhere }),
   ]);
   if (!visit) notFound();
-  const matched = faceShape
-    ? allStyles.filter((s) => s.faceShapeFit.toLowerCase().includes(faceShape.toLowerCase()))
-    : [];
-  const styles = matched.length > 0 ? matched : allStyles;
+
+  // A face-shape filter that matched nothing shouldn't leave the grid empty.
+  let styles = matchedStyles;
+  let total = matchedTotal;
+  let matched = !!faceShape;
+  if (faceShape && total === 0) {
+    [styles, total] = await Promise.all([
+      prisma.styleCatalog.findMany({ where: { active: true }, take: PAGE_SIZE, orderBy: { name: "asc" } }),
+      prisma.styleCatalog.count({ where: { active: true } }),
+    ]);
+    matched = false;
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col px-6 py-8">
@@ -40,15 +53,13 @@ export default async function RecommendationsPage({
         Recommended for You
       </h1>
       <p className="fade-up mt-1 text-[15px] text-muted" style={{ animationDelay: "100ms" }}>
-        {matched.length > 0
-          ? `Matched to your ${faceShape} face shape`
-          : "Popular styles, picked for a quick browse"}
+        {matched ? `Matched to your ${faceShape} face shape` : "Popular styles, picked for a quick browse"}
       </p>
 
       {/* AI analysis is opt-in, not forced on every visit — real per-user
           face/hair analysis is costly to run at scale, so it's offered here
           as an upgrade rather than a mandatory first step. */}
-      {matched.length === 0 && (
+      {!matched && (
         <Link
           href={`/v/${visit.id}/intake`}
           className="fade-up mt-5 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent-light px-4 py-3.5 transition-colors hover:bg-accent-light/70"
@@ -62,42 +73,21 @@ export default async function RecommendationsPage({
         </Link>
       )}
 
-      <div
-        className="fade-up mt-5 flex gap-2 overflow-x-auto pb-1"
-        style={{ animationDelay: "160ms" }}
-      >
+      <div className="fade-up mt-5 flex gap-2 overflow-x-auto pb-1" style={{ animationDelay: "160ms" }}>
         {FILTERS.map((f, i) => (
           <Pill key={f} label={f} active={i === 0} />
         ))}
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        {styles.map((style, i) => (
-          <div
-            key={style.id}
-            className="fade-up group relative overflow-hidden rounded-2xl border border-border bg-surface transition-shadow duration-200 hover:shadow-lg"
-            style={{ animationDelay: `${200 + i * 60}ms` }}
-          >
-            <GenerateStyleLink visitId={visit.id} styleCatalogId={style.id}>
-              <PhotoPlaceholder src={style.imageUrl} className="aspect-square w-full rounded-none" />
-              <div className="p-3">
-                <p className="truncate text-sm font-semibold">{style.name}</p>
-                <p className="text-xs text-muted">{style.fadeType ?? style.description}</p>
-              </div>
-            </GenerateStyleLink>
-            <FavoriteButton className="absolute right-2 top-2" />
-          </div>
-        ))}
-      </div>
+      <StyleGrid
+        visitId={visit.id}
+        initialStyles={styles}
+        initialHasMore={PAGE_SIZE < total}
+        faceShape={matched ? faceShape : undefined}
+        pageSize={PAGE_SIZE}
+      />
 
-      <div className="fade-up mt-6" style={{ animationDelay: `${200 + styles.length * 60 + 60}ms` }}>
-        <SecondaryButton href={`/v/${visit.id}/recommendations`}>View More Styles</SecondaryButton>
-      </div>
-
-      <p
-        className="fade-up mt-4 text-center text-xs text-muted"
-        style={{ animationDelay: `${200 + styles.length * 60 + 100}ms` }}
-      >
+      <p className="fade-up mt-4 text-center text-xs text-muted" style={{ animationDelay: "260ms" }}>
         Tapping ♥ a style?{" "}
         <Link href={`/signup?visitId=${visit.id}`} className="font-medium text-accent underline-offset-2 hover:underline">
           Sign in

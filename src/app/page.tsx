@@ -86,7 +86,12 @@ export default async function MarketingPage() {
                   className="aspect-square overflow-hidden rounded-lg"
                   style={{ transform: `rotate(${(i - 1) * 6}deg)` }}
                 >
-                  <PhotoPlaceholder src={s.imageUrl} className="h-full w-full grayscale" />
+                  <PhotoPlaceholder
+                    src={s.imageUrl}
+                    className="h-full w-full grayscale"
+                    sizes="(max-width: 640px) 33vw, 160px"
+                    objectPosition="top"
+                  />
                 </div>
               ))}
             </div>
@@ -100,7 +105,12 @@ export default async function MarketingPage() {
             <div className="mt-4 grid grid-cols-3 gap-2">
               {demoStyles.slice(0, 3).map((s) => (
                 <div key={s.id} className="aspect-square overflow-hidden rounded-lg shadow-sm">
-                  <PhotoPlaceholder src={s.imageUrl} className="h-full w-full" />
+                  <PhotoPlaceholder
+                    src={s.imageUrl}
+                    className="h-full w-full"
+                    sizes="(max-width: 640px) 33vw, 160px"
+                    objectPosition="top"
+                  />
                 </div>
               ))}
             </div>
@@ -150,6 +160,8 @@ export default async function MarketingPage() {
             <PhotoPlaceholder
               src={demoStyles[0]?.imageUrl}
               className="col-span-1 aspect-square rounded-lg"
+              sizes="(max-width: 640px) 33vw, 128px"
+              objectPosition="top"
               priority
             />
             <div className="skeleton-shimmer flex aspect-square items-center justify-center rounded-lg">
@@ -206,6 +218,8 @@ export default async function MarketingPage() {
           <PhotoPlaceholder
             src={demoStyles[1]?.imageUrl}
             className="aspect-square flex-1 rounded-2xl"
+            sizes="(max-width: 640px) 45vw, 200px"
+            objectPosition="top"
           />
         </div>
       </Section>

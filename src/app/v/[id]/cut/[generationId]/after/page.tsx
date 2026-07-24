@@ -39,13 +39,23 @@ export default async function BeforeAfterPage({
 
       <div className="fade-up mt-6 grid grid-cols-2 gap-3" style={{ animationDelay: "140ms" }}>
         <div className="relative overflow-hidden rounded-2xl">
-          <PhotoPlaceholder src={styles[0]?.imageUrl} className="aspect-square w-full grayscale" />
+          <PhotoPlaceholder
+            src={styles[0]?.imageUrl}
+            className="aspect-square w-full grayscale"
+            sizes="(max-width: 640px) 50vw, 260px"
+            objectPosition="top"
+          />
           <span className="absolute left-2 top-2 rounded-full bg-ink/70 px-2.5 py-1 text-[10px] uppercase tracking-wide text-white">
             Before (sample)
           </span>
         </div>
         <div className="relative overflow-hidden rounded-2xl">
-          <PhotoPlaceholder src={styles[1]?.imageUrl ?? styles[0]?.imageUrl} className="aspect-square w-full" />
+          <PhotoPlaceholder
+            src={styles[1]?.imageUrl ?? styles[0]?.imageUrl}
+            className="aspect-square w-full"
+            sizes="(max-width: 640px) 50vw, 260px"
+            objectPosition="top"
+          />
           <span className="absolute left-2 top-2 rounded-full bg-accent px-2.5 py-1 text-[10px] uppercase tracking-wide text-white">
             After (sample)
           </span>
