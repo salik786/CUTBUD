@@ -38,30 +38,26 @@ export function ImageUploader({
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-4">
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border bg-page">
-          {value && <Image src={value} alt="" fill className="object-cover" sizes="96px" />}
-        </div>
-        <div>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-semibold hover:bg-page disabled:opacity-50"
-          >
-            {uploading ? "Uploading…" : value ? "Replace Image" : "Upload Image"}
-          </button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={handleFile}
-          />
-          {error && <p className="mt-1 text-xs text-danger">{error}</p>}
-        </div>
+    <div className="flex flex-col items-start gap-2">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-page">
+        {value && <Image src={value} alt="" fill className="object-cover" sizes="180px" />}
       </div>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold hover:bg-page disabled:opacity-50"
+      >
+        {uploading ? "Uploading…" : value ? "Replace Image" : "Upload Image"}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleFile}
+      />
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }

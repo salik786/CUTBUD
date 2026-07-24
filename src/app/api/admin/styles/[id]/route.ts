@@ -20,6 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     leftImageUrl,
     rightImageUrl,
     backImageUrl,
+    displayAngle,
     inspiredBy,
     active,
   } = body;
@@ -38,6 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       leftImageUrl,
       rightImageUrl,
       backImageUrl,
+      displayAngle: displayAngle || "front",
       inspiredBy,
       active,
     },

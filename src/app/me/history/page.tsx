@@ -2,6 +2,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { getDisplayImageUrl } from "@/lib/styleImage";
 
 export default async function HistoryPage() {
   const user = await getCurrentUser();
@@ -35,7 +36,7 @@ export default async function HistoryPage() {
                 className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3"
               >
                 <PhotoPlaceholder
-                  src={cut.styleGeneration.styleCatalog.imageUrl}
+                  src={getDisplayImageUrl(cut.styleGeneration.styleCatalog)}
                   className="h-14 w-14 shrink-0"
                   sizes="56px"
                   objectPosition="top"

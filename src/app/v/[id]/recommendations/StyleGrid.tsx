@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { StyleCatalog } from "@prisma/client";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { getDisplayImageUrl } from "@/lib/styleImage";
 import { GenerateStyleLink } from "./GenerateStyleLink";
 
 export function StyleGrid({
@@ -59,7 +60,7 @@ export function StyleGrid({
           >
             <GenerateStyleLink visitId={visitId} styleCatalogId={style.id}>
               <PhotoPlaceholder
-                src={style.imageUrl}
+                src={getDisplayImageUrl(style)}
                 className="aspect-square w-full rounded-none"
                 sizes="(max-width: 640px) 50vw, 340px"
                 objectPosition="top"

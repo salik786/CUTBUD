@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     leftImageUrl,
     rightImageUrl,
     backImageUrl,
+    displayAngle,
     inspiredBy,
   } = body;
 
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
       leftImageUrl,
       rightImageUrl,
       backImageUrl,
+      displayAngle: displayAngle || "front",
       inspiredBy,
     },
   });

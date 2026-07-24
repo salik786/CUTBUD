@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { getDisplayImageUrl } from "@/lib/styleImage";
 
 export default async function AdminStylesPage() {
   const styles = await prisma.styleCatalog.findMany({ orderBy: { name: "asc" } });
@@ -25,8 +26,8 @@ export default async function AdminStylesPage() {
             className="flex items-center gap-4 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-page"
           >
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-page">
-              {style.imageUrl && (
-                <Image src={style.imageUrl} alt="" fill className="object-cover" sizes="56px" />
+              {getDisplayImageUrl(style) && (
+                <Image src={getDisplayImageUrl(style)!} alt="" fill className="object-cover" sizes="56px" />
               )}
             </div>
             <div className="min-w-0 flex-1">

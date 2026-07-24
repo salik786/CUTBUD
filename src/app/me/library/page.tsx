@@ -2,6 +2,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { getDisplayImageUrl } from "@/lib/styleImage";
 
 export default async function LibraryPage() {
   const user = await getCurrentUser();
@@ -40,7 +41,7 @@ export default async function LibraryPage() {
             {savedCuts.map((cut) => (
               <div key={cut.id} className="overflow-hidden rounded-2xl border border-border bg-surface">
                 <PhotoPlaceholder
-                  src={cut.styleGeneration.styleCatalog.imageUrl}
+                  src={getDisplayImageUrl(cut.styleGeneration.styleCatalog)}
                   className="aspect-square w-full rounded-none"
                   sizes="(max-width: 640px) 50vw, 340px"
                   objectPosition="top"

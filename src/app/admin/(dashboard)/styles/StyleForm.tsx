@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { STYLE_ANGLES, type StyleAngle } from "@/lib/styleImage";
 import { ImageUploader } from "../ImageUploader";
 
 export interface StyleFormValues {
@@ -18,6 +19,7 @@ export interface StyleFormValues {
   leftImageUrl: string;
   rightImageUrl: string;
   backImageUrl: string;
+  displayAngle: string;
   inspiredBy: string;
   active: boolean;
 }
@@ -34,8 +36,16 @@ const EMPTY: StyleFormValues = {
   leftImageUrl: "",
   rightImageUrl: "",
   backImageUrl: "",
+  displayAngle: "front",
   inspiredBy: "",
   active: true,
+};
+
+const ANGLE_URL_KEY: Record<StyleAngle, keyof StyleFormValues> = {
+  front: "imageUrl",
+  left: "leftImageUrl",
+  right: "rightImageUrl",
+  back: "backImageUrl",
 };
 
 export function StyleForm({ initial }: { initial?: StyleFormValues }) {
@@ -114,6 +124,38 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
         <p className="mt-2 text-xs text-muted">
           Only Front is required — any angle left empty shows as pending on the cut card.
         </p>
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Card thumbnail
+        </label>
+        <p className="mt-1 text-xs text-muted">
+          Which angle shows on the explore/recommendations grid, library, and history.
+        </p>
+        <div className="mt-2 flex gap-2">
+          {STYLE_ANGLES.map(({ value, label }) => {
+            const hasPhoto = !!values[ANGLE_URL_KEY[value]];
+            const active = values.displayAngle === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                disabled={!hasPhoto}
+                onClick={() => set("displayAngle", value)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                  active
+                    ? "bg-accent text-white"
+                    : hasPhoto
+                      ? "bg-surface text-muted hover:bg-accent-light"
+                      : "cursor-not-allowed bg-surface text-muted/40"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <Field label="Name">

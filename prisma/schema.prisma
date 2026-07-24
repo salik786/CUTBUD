@@ -53,10 +53,11 @@ model StyleCatalog {
   guardNumber  String?
   lengthMm     String?
   fadeType     String?
-  imageUrl     String? // front angle — the primary thumbnail everywhere
+  imageUrl     String? // front angle
   leftImageUrl  String?
   rightImageUrl String?
   backImageUrl  String?
+  displayAngle String   @default("front") // which angle's photo is used as the card thumbnail everywhere
   inspiredBy   String? // credit shown on the cut card, e.g. a barber/stylist name
   active       Boolean  @default(true)
 

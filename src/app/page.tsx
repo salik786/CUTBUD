@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
+import { getDisplayImageUrl } from "@/lib/styleImage";
 
 const HERO_IMAGE =
   "https://d8j0ntlcm91z4.cloudfront.net/user_3D5SnkyPj18zFLOhlLQ1pMr2UqK/hf_20260722_072222_3a015c20-68e3-4244-b04e-f23eebd56aa3.png";
@@ -87,7 +88,7 @@ export default async function MarketingPage() {
                   style={{ transform: `rotate(${(i - 1) * 6}deg)` }}
                 >
                   <PhotoPlaceholder
-                    src={s.imageUrl}
+                    src={getDisplayImageUrl(s)}
                     className="h-full w-full grayscale"
                     sizes="(max-width: 640px) 33vw, 160px"
                     objectPosition="top"
@@ -106,7 +107,7 @@ export default async function MarketingPage() {
               {demoStyles.slice(0, 3).map((s) => (
                 <div key={s.id} className="aspect-square overflow-hidden rounded-lg shadow-sm">
                   <PhotoPlaceholder
-                    src={s.imageUrl}
+                    src={getDisplayImageUrl(s)}
                     className="h-full w-full"
                     sizes="(max-width: 640px) 33vw, 160px"
                     objectPosition="top"
@@ -139,7 +140,7 @@ export default async function MarketingPage() {
                 style={{ transform: `translate(${x}px, ${y}px)` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.imageUrl ?? undefined} alt="" className="h-full w-full object-cover" />
+                <img src={getDisplayImageUrl(s) ?? undefined} alt="" className="h-full w-full object-cover" />
               </div>
             );
           })}
@@ -158,7 +159,7 @@ export default async function MarketingPage() {
         <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
           <div className="grid grid-cols-3 gap-1 p-1">
             <PhotoPlaceholder
-              src={demoStyles[0]?.imageUrl}
+              src={demoStyles[0] ? getDisplayImageUrl(demoStyles[0]) : undefined}
               className="col-span-1 aspect-square rounded-lg"
               sizes="(max-width: 640px) 33vw, 128px"
               objectPosition="top"
@@ -216,7 +217,7 @@ export default async function MarketingPage() {
           </div>
           <div className="text-2xl text-accent">→</div>
           <PhotoPlaceholder
-            src={demoStyles[1]?.imageUrl}
+            src={demoStyles[1] ? getDisplayImageUrl(demoStyles[1]) : undefined}
             className="aspect-square flex-1 rounded-2xl"
             sizes="(max-width: 640px) 45vw, 200px"
             objectPosition="top"
@@ -239,7 +240,7 @@ export default async function MarketingPage() {
             >
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.imageUrl ?? undefined} alt="" className="h-full w-full object-cover" />
+                <img src={getDisplayImageUrl(s) ?? undefined} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-white">{s.name}</p>
