@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Lets the client-side Router Cache reuse a dynamic route's RSC payload
+    // for this many seconds — navigating back to a cut card or the
+    // recommendations grid you already visited skips the server round-trip
+    // instead of refetching every time.
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   images: {
     // AI-generated style/hero photos are served as full-size (~4MB, 2048px)
     // originals from this CDN — letting next/image optimize them (resize +

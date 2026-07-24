@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  await prisma.visit.update({
-    where: { id: visitId },
-    data: { selectedGenerationId: generation.id },
-  });
+  // Not needed for the client to navigate to the cut card — let it finish
+  // after the response goes out instead of adding another round-trip to
+  // the critical path.
+  prisma.visit
+    .update({ where: { id: visitId }, data: { selectedGenerationId: generation.id } })
+    .catch((err) => console.error("Failed to set selectedGenerationId", err));
 
   return NextResponse.json({ generation });
 }

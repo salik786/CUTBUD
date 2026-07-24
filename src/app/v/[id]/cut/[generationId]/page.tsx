@@ -5,6 +5,11 @@ import { BackLink } from "@/components/BackLink";
 import { ShowToBarberButton } from "./ShowToBarberButton";
 import { CutCardGallery } from "./CutCardGallery";
 
+// A generation's style/instruction data is immutable once created — safe to
+// serve a cached copy for a short window instead of hitting Postgres again
+// on every back-navigation to the same cut card.
+export const revalidate = 60;
+
 export default async function CutCardPage({
   params,
 }: {
