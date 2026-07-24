@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "d8j0ntlcm91z4.cloudfront.net",
       },
+      {
+        // Admin-uploaded style images, via Supabase Storage.
+        protocol: "https",
+        hostname: "tbxxwhebvrmfkygfjeug.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 };

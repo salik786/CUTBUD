@@ -71,7 +71,7 @@ The core "wow moment" feature: intake → **scan (capture → analyzing → resu
 | `/v/[id]/intake` | Step 1 — AI Hair Analysis intro | Single CTA into `/v/[id]/scan` |
 | `/v/[id]/scan` | Capture → AI scanning animation → analysis results | See "AI Hair Analysis" section below — one client component owns all three phases |
 | `/v/[id]/recommendations` | Step 2 — Recommended grid | Accepts `?faceShape=` from the analysis results and filters the catalog by it. Tapping a card calls `POST /api/style-generations`, then routes to the new generation's real id |
-| `/v/[id]/cut/[generationId]` | Step 3 — Cut card detail | `generationId` is now a **real** `StyleGeneration` row, not a placeholder |
+| `/v/[id]/cut/[generationId]` | Step 3 — Cut card detail | `generationId` is now a **real** `StyleGeneration` row, not a placeholder. Front/Left/Right/Back thumbnails now use the style's real per-angle images (see Admin Panel) instead of repeating the front photo |
 | `/v/[id]/cut/[generationId]/after` | Step 4 — Before & After | Photo upload is a disabled placeholder; star rating here is **not submitted anywhere** (cosmetic only — the real rating write happens on `/rate`) |
 | `/v/[id]/rate` | Rate Your Experience | `POST /api/ratings`, then → `/save` |
 | `/v/[id]/save` | "Love your new haircut?" | Links to `/signup?visitId=...` |
@@ -79,6 +79,21 @@ The core "wow moment" feature: intake → **scan (capture → analyzing → resu
 | `/me/library` | Saved cuts grid | Reads `SavedCut` for the cookie-identified user |
 | `/me/history` | Past visits list | **Currently just re-shows `SavedCut`** — see Known Limitations |
 | `/me/home`, `/me/explore`, `/me/scan`, `/me/profile` | Bottom-nav stub pages | Placeholder copy only, no real feature |
+| `/admin/*` | Admin panel — see its own section below | Separate real password auth, not the customer cookie stub |
+
+## Admin panel (`/admin`)
+
+A separate, password-authenticated panel for managing site content — deliberately **not** the same auth as regular customers (`src/lib/session.ts`'s anonymous cookie stub). This one guards real write access, so it needs a real login.
+
+- **`AdminUser` / `AdminSession`** (Prisma models) — email + bcrypt password hash, session id in an `httpOnly` cookie (`admin_session`, 7-day expiry). See `src/lib/adminAuth.ts` for `hashPassword` / `verifyPassword` / `createAdminSession` / `getAdminUser`.
+- **`/admin/signup` is bootstrap-only.** `POST /api/admin/auth/signup` refuses (403) once *any* admin exists — there is deliberately no open "create an admin" endpoint reachable without already being logged in. **There is currently no way to add a second admin** short of inserting a row directly (e.g. a one-off script like the ones in `scripts/`) — if you need multi-admin support, that's the next real gap here, not something already half-built.
+- **`/admin/(dashboard)/*`** is a route group whose `layout.tsx` checks `getAdminUser()` server-side and redirects to `/admin/login` if not authenticated — every page under it (styles, shops, dashboard home) is protected by that one layout, not per-page checks.
+- **Image uploads go to Supabase Storage**, not the site's own filesystem (Vercel has none persistent) and not the Higgsfield/CloudFront pipeline used for the original seed styles. `POST /api/admin/upload` accepts a PNG/JPEG/WebP up to 10MB, uploads it to the public `style-images` bucket (created once via `scripts/create-storage-bucket.ts`, using the `SUPABASE_SERVICE_ROLE_KEY` service-role key — **never expose that key to the client**, it bypasses RLS entirely), and returns a public URL to store on `StyleCatalog`. `next.config.ts`'s `images.remotePatterns` had to be extended to allow that bucket's domain for `next/image` to optimize them.
+- **`StyleCatalog` now has 4 image slots** — `imageUrl` (front, required, used everywhere as the primary thumbnail), `leftImageUrl`, `rightImageUrl`, `backImageUrl` (all optional — any left empty renders as an honest shimmer "pending" placeholder on the cut card, same as before this existed), plus `inspiredBy` (optional credit text shown under the style name on the cut card, e.g. a barber/stylist name).
+- The styles list/create/edit forms live at `/admin/styles`, `/admin/styles/new`, `/admin/styles/[id]` (`StyleForm.tsx`, shared between create and edit). Deleting a style that already has `StyleGeneration` rows (i.e. any customer has actually generated a cut card from it) is blocked with a 409 and a message suggesting deactivation instead — hard-deleting would violate the FK and break existing history.
+- Shops management (`/admin/shops`) is create + toggle-active only — no delete, no editing the QR tokens themselves (regenerating a live shop's QR token would break any physical QR codes already printed/displayed, so that's deliberately not exposed).
+
+**Env vars needed beyond `DATABASE_URL`/`DIRECT_URL`**: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (the project's `sb_secret_...` key) — set these in Vercel's project settings too, not just local `.env`, or `/api/admin/upload` will 500 in production.
 
 ## API additions this pass
 
@@ -90,12 +105,16 @@ The core "wow moment" feature: intake → **scan (capture → analyzing → resu
 - `POST /api/auth/stub` — see below
 - `GET|POST /api/users/me/locker`
 - `POST /api/hair-profile` — upserts a `UserHairProfile` by `visitId`
+- `POST /api/admin/auth/signup` / `login` / `logout` — see Admin Panel section
+- `GET|POST /api/admin/styles`, `PATCH|DELETE /api/admin/styles/[id]` — style catalog CRUD, admin-only
+- `GET|POST /api/admin/shops`, `PATCH /api/admin/shops/[id]` — shop management, admin-only
+- `POST /api/admin/upload` — uploads an image to Supabase Storage, admin-only, see Admin Panel section
 
 ## Known limitations / where the mocks are
 
 1. **Auth is a stub.** `POST /api/auth/stub` creates a `User` row with a random `oauthId` and sets an `httpOnly` cookie (`cs_user`) — there is no real Google/Apple OAuth or phone OTP. `getCurrentUser()` in `src/lib/session.ts` just reads that cookie. Replace with Supabase Auth per the original spec's Section 7 when you're ready to migrate off local SQLite.
 2. **The marketing hero photo is a single hardcoded URL.** `HERO_IMAGE` in `src/app/page.tsx` points at one Higgsfield-generated CloudFront image. The original brief called for 11 distinct AI visuals (problem/AI-matching/multi-angle/before-after/passport/QR/save/trust/final-CTA sections) — only the hero was generated before the Higgsfield account ran out of credits (free-plan allowance). Every other marketing section reuses the existing design system (gradients, cards, the 5 style photos) instead of a bespoke visual. To finish the original 11-visual brief, top up Higgsfield credits and generate the remaining prompts (kept in the request history), then swap each `Section`'s CSS mockup for a `background-image` the same way the hero does.
-3. **Angle thumbnails and before/after are the same photo repeated, not distinct shots.** The cut-card Left/Right/Back/45° thumbnails all render `style.imageUrl` (the one front-facing photo) with a label overlay — same for the Before & After screen, which reuses two different *style* photos as illustrative stand-ins, labeled "(sample)". This was a deliberate placeholder choice (real photos read better than gray shimmer) but none of it is the user's actual haircut from any angle — don't let it get mistaken for real per-angle generation, which is still Phase 2 work.
+3. **Cut-card angle photos are now real per-style images (admin-managed), but before/after is still faked.** `StyleCatalog.leftImageUrl` / `rightImageUrl` / `backImageUrl` are real, admin-uploaded photos of that *style* (see Admin Panel) — a real improvement over the earlier version where every angle just repeated the front photo. What they are **not** is the actual customer's own haircut from those angles — a `StyleGeneration`'s own `frontImageUrl`/`sideImageUrl`/`backImageUrl` fields (meant for a real per-customer image-generation pipeline, Phase 2) are still literally the string `"pending"`. The Before & After screen still reuses two different *style* photos as illustrative stand-ins, labeled "(sample)" — don't mistake either of these for a real per-customer render.
 5. **CDN dependency.** `StyleCatalog.imageUrl` (and the marketing hero photo) are external CloudFront URLs — not downloaded into `/public`. If a URL ever expires or gets taken down, `PhotoPlaceholder` will render a broken `<img>` icon (it only falls back to the shimmer skeleton when `src` is falsy, not when the URL 404s).
 6. **History ≈ Library.** Ratings are tied to a `Visit`, not directly to a `User`, and a `Visit` isn't linked to a `User` either (only `SavedCut` is user-linked). So `/me/history` currently just re-lists `SavedCut` rows — it does not show the actual star rating given for that visit. To fix properly: either add a `userId` to `Visit`, or join `SavedCut.shopId` + `styleGenerationId.visitId` → `Rating` (messier, and breaks if a style was regenerated).
 7. **Filter pills and favorites are cosmetic.** See component notes above. (Face-shape matching itself is real now — see AI Hair Analysis — but the `Trending` / `Low Fade` / `Curly` / `Classic` pills above the grid don't do anything when clicked.)

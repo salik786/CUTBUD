@@ -53,7 +53,11 @@ model StyleCatalog {
   guardNumber  String?
   lengthMm     String?
   fadeType     String?
-  imageUrl     String?
+  imageUrl     String? // front angle — the primary thumbnail everywhere
+  leftImageUrl  String?
+  rightImageUrl String?
+  backImageUrl  String?
+  inspiredBy   String? // credit shown on the cut card, e.g. a barber/stylist name
   active       Boolean  @default(true)
 
   generations  StyleGeneration[]
@@ -149,4 +153,29 @@ model UserHairProfile {
   createdAt         DateTime @default(now())
 
   @@map("user_hair_profiles")
+}
+
+// Real password-based auth for the admin panel — deliberately separate from
+// the anonymous cookie-stub session used for regular customers (see
+// src/lib/session.ts). This one guards actual write access to site content
+// (styles, images, shops), so it needs a real password, not a stub.
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  sessions     AdminSession[]
+
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id          String   @id @default(uuid())
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@map("admin_sessions")
 }

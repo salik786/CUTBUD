@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { StyleCatalog } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { Stepper } from "@/components/Stepper";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
@@ -6,7 +7,21 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { BackLink } from "@/components/BackLink";
 import { ShowToBarberButton } from "./ShowToBarberButton";
 
-const ANGLES = ["Front", "Left", "Right", "Back", "45°"];
+type Angle = "Front" | "Left" | "Right" | "Back";
+const ANGLES: Angle[] = ["Front", "Left", "Right", "Back"];
+
+function angleImage(style: StyleCatalog, angle: Angle): string | null {
+  switch (angle) {
+    case "Front":
+      return style.imageUrl;
+    case "Left":
+      return style.leftImageUrl;
+    case "Right":
+      return style.rightImageUrl;
+    case "Back":
+      return style.backImageUrl;
+  }
+}
 
 export default async function CutCardPage({
   params,
@@ -39,6 +54,11 @@ export default async function CutCardPage({
         <div>
           <h1 className="text-[1.75rem] font-bold tracking-tight">{style.name}</h1>
           <p className="mt-0.5 text-[15px] text-muted">{style.fadeType}</p>
+          {style.inspiredBy && (
+            <p className="mt-1 text-xs text-muted">
+              Inspired by <span className="font-medium text-ink/70">{style.inspiredBy}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <FavoriteButton />
@@ -62,10 +82,10 @@ export default async function CutCardPage({
         />
       </div>
 
-      <div className="fade-up mt-3 grid grid-cols-5 gap-2" style={{ animationDelay: "140ms" }}>
+      <div className="fade-up mt-3 grid grid-cols-4 gap-2" style={{ animationDelay: "140ms" }}>
         {ANGLES.map((angle) => (
           <div key={angle} className="relative overflow-hidden rounded-xl">
-            <PhotoPlaceholder src={style.imageUrl} className="aspect-square w-full" />
+            <PhotoPlaceholder src={angleImage(style, angle)} className="aspect-square w-full" />
             <span className="absolute inset-x-0 bottom-0 bg-ink/60 py-0.5 text-center text-[9px] uppercase tracking-wide text-white">
               {angle}
             </span>
