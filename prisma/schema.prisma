@@ -19,11 +19,70 @@ model Shop {
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
 
+  // Public profile shown after a QR scan — all optional so a barber can
+  // fill these in gradually instead of hitting a wall of required fields.
+  description   String?
+  logoUrl       String?
+  coverImageUrl String?
+  phone         String?
+  whatsapp      String?
+  instagram     String?
+  facebook      String?
+  website       String?
+  openingHours  String? // free-text for now, e.g. "Mon-Sat 10am-8pm"
+
   visits        Visit[]
   savedCuts     SavedCut[]
   ratings       Rating[]
+  barberUser    BarberUser?
+  shopStyles    ShopStyle[]
 
   @@map("shops")
+}
+
+model BarberUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  shopId       String   @unique // one login per shop for now — no multi-staff accounts yet
+  shop         Shop     @relation(fields: [shopId], references: [id])
+  createdAt    DateTime @default(now())
+
+  sessions     BarberSession[]
+
+  @@map("barber_users")
+}
+
+model BarberSession {
+  id           String     @id @default(uuid())
+  barberUserId String
+  barberUser   BarberUser @relation(fields: [barberUserId], references: [id])
+  expiresAt    DateTime
+
+  @@map("barber_sessions")
+}
+
+// Per-shop control over the global hairstyle library: which styles this
+// specific barber actually offers, at what price/skill/duration, plus
+// their own portfolio photos for that style. This is what makes the QR
+// code a real business tool instead of a generic style-inspiration page.
+model ShopStyle {
+  id                  String       @id @default(uuid())
+  shopId              String
+  shop                Shop         @relation(fields: [shopId], references: [id])
+  styleCatalogId      String
+  styleCatalog        StyleCatalog @relation(fields: [styleCatalogId], references: [id])
+  available           Boolean      @default(false)
+  skillLevel          String? // Beginner, Intermediate, Expert
+  price               String?
+  durationMin         Int?
+  requiresAppointment Boolean      @default(false)
+  portfolioUrls       String[]     @default([])
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@unique([shopId, styleCatalogId])
+  @@map("shop_styles")
 }
 
 model Visit {
@@ -89,6 +148,7 @@ model StyleCatalog {
   updatedAt    DateTime @updatedAt
 
   generations  StyleGeneration[]
+  shopStyles   ShopStyle[]
 
   @@map("style_catalog")
 }

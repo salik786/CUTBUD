@@ -7,7 +7,9 @@ export function ShopToggleActive({ shopId, active }: { shopId: string; active: b
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  async function toggle() {
+  async function toggle(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
     setLoading(true);
     await fetch(`/api/admin/shops/${shopId}`, {
       method: "PATCH",

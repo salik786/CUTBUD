@@ -19,9 +19,10 @@ export default async function AdminShopsPage() {
 
       <div className="mt-6 flex flex-col gap-2">
         {shops.map((shop) => (
-          <div
+          <Link
             key={shop.id}
-            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4"
+            href={`/admin/shops/${shop.id}`}
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-page"
           >
             <div className="min-w-0">
               <p className="font-semibold">{shop.name}</p>
@@ -31,7 +32,7 @@ export default async function AdminShopsPage() {
               </p>
             </div>
             <ShopToggleActive shopId={shop.id} active={shop.active} />
-          </div>
+          </Link>
         ))}
         {shops.length === 0 && <p className="text-sm text-muted">No shops yet.</p>}
       </div>

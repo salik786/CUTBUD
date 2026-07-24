@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { StyleCatalog } from "@prisma/client";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { STYLE_ANGLES, type StyleAngle } from "@/lib/styleImage";
-import { ImageUploader } from "../ImageUploader";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export interface StyleFormValues {
   id?: string;

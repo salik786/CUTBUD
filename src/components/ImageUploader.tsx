@@ -6,9 +6,11 @@ import Image from "next/image";
 export function ImageUploader({
   value,
   onChange,
+  uploadUrl = "/api/admin/upload",
 }: {
   value: string;
   onChange: (url: string) => void;
+  uploadUrl?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -22,7 +24,7 @@ export function ImageUploader({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const res = await fetch(uploadUrl, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Upload failed");
