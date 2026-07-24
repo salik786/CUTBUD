@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { buildStyleWhere } from "@/lib/styleFilters";
 
 const PAGE_SIZE_DEFAULT = 6;
 const PAGE_SIZE_MAX = 24;
@@ -9,7 +11,7 @@ const PAGE_SIZE_MAX = 24;
 // on every request, without risking noticeably stale data after an edit.
 export const revalidate = 30;
 
-async function fetchPage(where: Record<string, unknown>, page: number, pageSize: number) {
+async function fetchPage(where: Prisma.StyleCatalogWhereInput, page: number, pageSize: number) {
   const [styles, total] = await Promise.all([
     prisma.styleCatalog.findMany({
       where,
@@ -24,24 +26,24 @@ async function fetchPage(where: Record<string, unknown>, page: number, pageSize:
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const faceShape = searchParams.get("faceShape");
+  const faceShape = searchParams.get("faceShape") ?? undefined;
+  const filter = searchParams.get("filter") ?? undefined;
+  const q = searchParams.get("q") ?? undefined;
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
     PAGE_SIZE_MAX,
     Math.max(1, parseInt(searchParams.get("pageSize") ?? String(PAGE_SIZE_DEFAULT), 10) || PAGE_SIZE_DEFAULT)
   );
 
-  const matchedWhere = faceShape
-    ? { active: true, faceShapeFit: { contains: faceShape, mode: "insensitive" as const } }
-    : { active: true };
+  const matchedWhere = buildStyleWhere({ faceShape, filter, q });
 
   let { styles, total } = await fetchPage(matchedWhere, page, pageSize);
   let matched = !!faceShape;
 
   // A face-shape filter that matches nothing shouldn't leave the grid
-  // empty — fall back to the unfiltered catalog instead.
+  // empty — fall back to the filter/search-only catalog instead.
   if (faceShape && total === 0) {
-    ({ styles, total } = await fetchPage({ active: true }, page, pageSize));
+    ({ styles, total } = await fetchPage(buildStyleWhere({ filter, q }), page, pageSize));
     matched = false;
   }
 

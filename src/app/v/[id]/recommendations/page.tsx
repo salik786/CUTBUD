@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Pill } from "@/components/Pill";
 import { BackLink } from "@/components/BackLink";
+import { buildStyleWhere } from "@/lib/styleFilters";
+import { FilterBar } from "./FilterBar";
 import { StyleGrid } from "./StyleGrid";
 
-const FILTERS = ["All", "Trending", "Low Fade", "Curly", "Classic"];
 const PAGE_SIZE = 6;
 
 export default async function RecommendationsPage({
@@ -13,14 +13,12 @@ export default async function RecommendationsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ faceShape?: string }>;
+  searchParams: Promise<{ faceShape?: string; filter?: string; q?: string }>;
 }) {
   const { id } = await params;
-  const { faceShape } = await searchParams;
+  const { faceShape, filter, q } = await searchParams;
 
-  const matchedWhere = faceShape
-    ? { active: true, faceShapeFit: { contains: faceShape, mode: "insensitive" as const } }
-    : { active: true };
+  const matchedWhere = buildStyleWhere({ faceShape, filter, q });
 
   // Independent queries — run in parallel instead of one after another to
   // cut the round-trip time in half. Only the first page loads server-side;
@@ -33,14 +31,16 @@ export default async function RecommendationsPage({
   ]);
   if (!visit) notFound();
 
-  // A face-shape filter that matched nothing shouldn't leave the grid empty.
+  // A face-shape filter that matched nothing shouldn't leave the grid empty
+  // — the pill/search filter (if any) still applies to the fallback.
   let styles = matchedStyles;
   let total = matchedTotal;
   let matched = !!faceShape;
   if (faceShape && total === 0) {
+    const fallbackWhere = buildStyleWhere({ filter, q });
     [styles, total] = await Promise.all([
-      prisma.styleCatalog.findMany({ where: { active: true }, take: PAGE_SIZE, orderBy: { name: "asc" } }),
-      prisma.styleCatalog.count({ where: { active: true } }),
+      prisma.styleCatalog.findMany({ where: fallbackWhere, take: PAGE_SIZE, orderBy: { name: "asc" } }),
+      prisma.styleCatalog.count({ where: fallbackWhere }),
     ]);
     matched = false;
   }
@@ -73,19 +73,24 @@ export default async function RecommendationsPage({
         </Link>
       )}
 
-      <div className="fade-up mt-5 flex gap-2 overflow-x-auto pb-1" style={{ animationDelay: "160ms" }}>
-        {FILTERS.map((f, i) => (
-          <Pill key={f} label={f} active={i === 0} />
-        ))}
-      </div>
+      <FilterBar />
 
-      <StyleGrid
-        visitId={visit.id}
-        initialStyles={styles}
-        initialHasMore={PAGE_SIZE < total}
-        faceShape={matched ? faceShape : undefined}
-        pageSize={PAGE_SIZE}
-      />
+      {total === 0 ? (
+        <p className="fade-up mt-10 text-center text-sm text-muted" style={{ animationDelay: "200ms" }}>
+          No styles match{q ? ` “${q}”` : " that filter"}. Try a different search or filter.
+        </p>
+      ) : (
+        <StyleGrid
+          key={`${filter ?? ""}|${q ?? ""}|${matched}`}
+          visitId={visit.id}
+          initialStyles={styles}
+          initialHasMore={PAGE_SIZE < total}
+          faceShape={matched ? faceShape : undefined}
+          filter={filter}
+          q={q}
+          pageSize={PAGE_SIZE}
+        />
+      )}
 
       <p className="fade-up mt-4 text-center text-xs text-muted" style={{ animationDelay: "260ms" }}>
         Tapping ♥ a style?{" "}

@@ -11,12 +11,16 @@ export function StyleGrid({
   initialStyles,
   initialHasMore,
   faceShape,
+  filter,
+  q,
   pageSize,
 }: {
   visitId: string;
   initialStyles: StyleCatalog[];
   initialHasMore: boolean;
   faceShape?: string;
+  filter?: string;
+  q?: string;
   pageSize: number;
 }) {
   const [styles, setStyles] = useState(initialStyles);
@@ -32,6 +36,8 @@ export function StyleGrid({
         pageSize: String(pageSize),
       });
       if (faceShape) params.set("faceShape", faceShape);
+      if (filter) params.set("filter", filter);
+      if (q) params.set("q", q);
       const res = await fetch(`/api/styles/recommendations?${params}`);
       const data = await res.json();
       setStyles((prev) => [...prev, ...data.styles]);
