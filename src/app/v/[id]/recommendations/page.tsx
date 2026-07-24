@@ -37,7 +37,7 @@ export default async function RecommendationsPage({
   // StyleGrid fetches subsequent pages on demand instead of preloading the
   // whole catalog.
   const [visit, matchedStyles, matchedTotal] = await Promise.all([
-    prisma.visit.findUnique({ where: { id }, include: { shop: true } }),
+    prisma.visit.findUnique({ where: { id } }),
     prisma.styleCatalog.findMany({ where: matchedWhere, orderBy, take: PAGE_SIZE }),
     prisma.styleCatalog.count({ where: matchedWhere }),
   ]);
@@ -60,7 +60,11 @@ export default async function RecommendationsPage({
   return (
     <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col px-6 py-5">
       <div className="flex items-center justify-between">
-        <BackLink href={`/v/${visit.shop.entryQrToken}`} />
+        {/* The shop entry route now creates a new visit and redirects on
+            every load (no more "Get Started" screen to go back to), so
+            "back" from here leaves the flow instead of looping into a
+            fresh visit. */}
+        <BackLink href="/" />
         <h1 className="fade-up text-lg font-bold tracking-tight">Discover Styles</h1>
         <span className="w-9" aria-hidden />
       </div>

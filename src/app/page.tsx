@@ -60,8 +60,17 @@ export default async function MarketingPage() {
               CutBuddy turns your barbershop&apos;s waiting time into an AI-recommended, all-angle
               haircut brief — so any barber knows exactly what to do.
             </p>
-            <div className="fade-up mt-8 flex max-w-xs gap-3" style={{ animationDelay: "180ms" }}>
-              <PrimaryButton href={demoHref}>Try the Demo</PrimaryButton>
+            <div
+              className="fade-up mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
+              style={{ animationDelay: "180ms" }}
+            >
+              <PrimaryButton href={demoHref}>Explore Hairstyles</PrimaryButton>
+              <Link
+                href={`${demoHref}${demoHref === "/dev" ? "" : "?next=intake"}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-white/10"
+              >
+                ✨ AI Recommendation
+              </Link>
             </div>
           </div>
         </div>
@@ -277,10 +286,16 @@ export default async function MarketingPage() {
       <section className="hero-gradient flex flex-col items-center justify-center px-6 py-24 text-center text-white">
         <h2 className="text-3xl font-bold tracking-tight">Ready to walk in and get it right?</h2>
         <p className="mt-3 max-w-md text-white/70">
-          Scan a shop&apos;s QR code, or try the full flow right now with our demo shop.
+          Scan a shop&apos;s QR code, or explore styles right now with our demo shop.
         </p>
-        <div className="mt-8 w-full max-w-xs">
-          <PrimaryButton href={demoHref}>Try the Demo</PrimaryButton>
+        <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
+          <PrimaryButton href={demoHref}>Explore Hairstyles</PrimaryButton>
+          <Link
+            href={`${demoHref}${demoHref === "/dev" ? "" : "?next=intake"}`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-white/10"
+          >
+            ✨ AI Recommendation
+          </Link>
         </div>
         <Link href="/dev" className="mt-5 text-xs text-white/40 hover:underline">
           Dev tools →
