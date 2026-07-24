@@ -12,13 +12,15 @@ export default async function BeforeAfterPage({
   params: Promise<{ id: string; generationId: string }>;
 }) {
   const { id, generationId } = await params;
-  const visit = await prisma.visit.findUnique({ where: { id } });
-  if (!visit) notFound();
 
-  const styles = await prisma.styleCatalog.findMany({
-    where: { active: true, imageUrl: { not: null } },
-    take: 2,
-  });
+  const [visit, styles] = await Promise.all([
+    prisma.visit.findUnique({ where: { id } }),
+    prisma.styleCatalog.findMany({
+      where: { active: true, imageUrl: { not: null } },
+      take: 2,
+    }),
+  ]);
+  if (!visit) notFound();
 
   return (
     <main className="mx-auto flex w-full max-w-[520px] flex-1 flex-col px-6 py-8">

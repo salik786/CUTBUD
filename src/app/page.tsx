@@ -1,23 +1,30 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 
 const HERO_IMAGE =
   "https://d8j0ntlcm91z4.cloudfront.net/user_3D5SnkyPj18zFLOhlLQ1pMr2UqK/hf_20260722_072222_3a015c20-68e3-4244-b04e-f23eebd56aa3.png";
 
 export default async function MarketingPage() {
-  const shop = await prisma.shop.findFirst({ where: { active: true } });
-  const demoStyles = await prisma.styleCatalog.findMany({ where: { active: true }, take: 5 });
+  const [shop, demoStyles] = await Promise.all([
+    prisma.shop.findFirst({ where: { active: true } }),
+    prisma.styleCatalog.findMany({ where: { active: true }, take: 5 }),
+  ]);
   const demoHref = shop ? `/v/${shop.entryQrToken}` : "/dev";
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden">
       {/* 1. Hero */}
       <section className="hero-gradient relative flex min-h-[92vh] flex-col justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-70"
-          style={{ backgroundImage: `url('${HERO_IMAGE}')` }}
-          aria-hidden
+        <Image
+          src={HERO_IMAGE}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-70"
         />
         <div
           className="absolute inset-0"
@@ -79,8 +86,7 @@ export default async function MarketingPage() {
                   className="aspect-square overflow-hidden rounded-lg"
                   style={{ transform: `rotate(${(i - 1) * 6}deg)` }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.imageUrl ?? undefined} alt="" className="h-full w-full object-cover grayscale" />
+                  <PhotoPlaceholder src={s.imageUrl} className="h-full w-full grayscale" />
                 </div>
               ))}
             </div>
@@ -94,8 +100,7 @@ export default async function MarketingPage() {
             <div className="mt-4 grid grid-cols-3 gap-2">
               {demoStyles.slice(0, 3).map((s) => (
                 <div key={s.id} className="aspect-square overflow-hidden rounded-lg shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.imageUrl ?? undefined} alt="" className="h-full w-full object-cover" />
+                  <PhotoPlaceholder src={s.imageUrl} className="h-full w-full" />
                 </div>
               ))}
             </div>
@@ -142,11 +147,10 @@ export default async function MarketingPage() {
       >
         <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
           <div className="grid grid-cols-3 gap-1 p-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={demoStyles[0]?.imageUrl ?? undefined}
-              alt=""
-              className="col-span-1 aspect-square rounded-lg object-cover"
+            <PhotoPlaceholder
+              src={demoStyles[0]?.imageUrl}
+              className="col-span-1 aspect-square rounded-lg"
+              priority
             />
             <div className="skeleton-shimmer flex aspect-square items-center justify-center rounded-lg">
               <span className="text-[9px] uppercase text-muted">Side</span>
@@ -199,11 +203,9 @@ export default async function MarketingPage() {
             <span className="text-xs uppercase text-muted">Before</span>
           </div>
           <div className="text-2xl text-accent">→</div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={demoStyles[1]?.imageUrl ?? undefined}
-            alt=""
-            className="aspect-square flex-1 rounded-2xl object-cover"
+          <PhotoPlaceholder
+            src={demoStyles[1]?.imageUrl}
+            className="aspect-square flex-1 rounded-2xl"
           />
         </div>
       </Section>

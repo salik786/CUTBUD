@@ -19,10 +19,14 @@ export default async function RecommendationsPage({
 }) {
   const { id } = await params;
   const { faceShape } = await searchParams;
-  const visit = await prisma.visit.findUnique({ where: { id } });
-  if (!visit) notFound();
 
-  const allStyles = await prisma.styleCatalog.findMany({ where: { active: true }, take: 6 });
+  // Independent queries — run in parallel instead of one after another to
+  // cut the round-trip time in half.
+  const [visit, allStyles] = await Promise.all([
+    prisma.visit.findUnique({ where: { id } }),
+    prisma.styleCatalog.findMany({ where: { active: true }, take: 6 }),
+  ]);
+  if (!visit) notFound();
   const matched = faceShape
     ? allStyles.filter((s) => s.faceShapeFit.toLowerCase().includes(faceShape.toLowerCase()))
     : [];

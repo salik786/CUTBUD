@@ -1,5 +1,9 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { EntryStart } from "./EntryStart";
+
+const HERO_BG =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_3D5SnkyPj18zFLOhlLQ1pMr2UqK/hf_20260722_065754_bf4d92bf-fe3f-4441-81ed-c9f4bfe3fbd4.png";
 
 export default async function EntryLandingPage({
   params,
@@ -24,15 +28,15 @@ export default async function EntryLandingPage({
   return (
     <main className="hero-gradient relative flex flex-1 flex-col overflow-hidden px-6 py-10 text-white">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-cover bg-top opacity-40"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 overflow-hidden opacity-40"
         style={{
-          backgroundImage:
-            "url('https://d8j0ntlcm91z4.cloudfront.net/user_3D5SnkyPj18zFLOhlLQ1pMr2UqK/hf_20260722_065754_bf4d92bf-fe3f-4441-81ed-c9f4bfe3fbd4.png')",
           maskImage: "linear-gradient(to bottom, black, transparent)",
           WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
         }}
         aria-hidden
-      />
+      >
+        <Image src={HERO_BG} alt="" fill priority sizes="100vw" className="object-cover object-top" />
+      </div>
 
       <div className="fade-up relative flex items-center gap-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-bold">

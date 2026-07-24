@@ -14,13 +14,15 @@ export default async function CutCardPage({
   params: Promise<{ id: string; generationId: string }>;
 }) {
   const { id, generationId } = await params;
-  const visit = await prisma.visit.findUnique({ where: { id } });
-  if (!visit) notFound();
 
-  const generation = await prisma.styleGeneration.findUnique({
-    where: { id: generationId },
-    include: { styleCatalog: true },
-  });
+  const [visit, generation] = await Promise.all([
+    prisma.visit.findUnique({ where: { id } }),
+    prisma.styleGeneration.findUnique({
+      where: { id: generationId },
+      include: { styleCatalog: true },
+    }),
+  ]);
+  if (!visit) notFound();
   if (!generation) notFound();
 
   const style = generation.styleCatalog;
