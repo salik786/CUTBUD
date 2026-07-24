@@ -11,6 +11,14 @@ function keywordClause(keyword: string): Prisma.StyleCatalogWhereInput {
       { fadeType: { contains: keyword, mode: "insensitive" } },
       { faceShapeFit: { contains: keyword, mode: "insensitive" } },
       { inspiredBy: { contains: keyword, mode: "insensitive" } },
+      { category: { contains: keyword, mode: "insensitive" } },
+      { textureCompat: { contains: keyword, mode: "insensitive" } },
+      { density: { contains: keyword, mode: "insensitive" } },
+      { lengthCategory: { contains: keyword, mode: "insensitive" } },
+      { maintenance: { contains: keyword, mode: "insensitive" } },
+      { beardPairing: { contains: keyword, mode: "insensitive" } },
+      { occasion: { contains: keyword, mode: "insensitive" } },
+      { targetAudience: { contains: keyword, mode: "insensitive" } },
     ],
   };
 }

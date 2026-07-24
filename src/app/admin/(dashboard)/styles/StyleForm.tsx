@@ -15,6 +15,14 @@ export interface StyleFormValues {
   guardNumber: string;
   lengthMm: string;
   fadeType: string;
+  category: string;
+  textureCompat: string;
+  density: string;
+  lengthCategory: string;
+  maintenance: string;
+  beardPairing: string;
+  occasion: string;
+  targetAudience: string;
   imageUrl: string;
   leftImageUrl: string;
   rightImageUrl: string;
@@ -32,6 +40,14 @@ const EMPTY: StyleFormValues = {
   guardNumber: "",
   lengthMm: "",
   fadeType: "",
+  category: "",
+  textureCompat: "",
+  density: "",
+  lengthCategory: "",
+  maintenance: "",
+  beardPairing: "",
+  occasion: "",
+  targetAudience: "",
   imageUrl: "",
   leftImageUrl: "",
   rightImageUrl: "",
@@ -40,6 +56,14 @@ const EMPTY: StyleFormValues = {
   inspiredBy: "",
   active: true,
 };
+
+const TEXTURE_OPTIONS = ["Straight", "Wavy", "Curly", "Coily"];
+const DENSITY_OPTIONS = ["Thin", "Medium", "Thick"];
+const LENGTH_CATEGORY_OPTIONS = ["Very Short", "Short", "Medium", "Long"];
+const MAINTENANCE_OPTIONS = ["Low", "Medium", "High"];
+const BEARD_PAIRING_OPTIONS = ["None", "Optional", "Required"];
+const OCCASION_OPTIONS = ["Daily", "Professional", "Party", "Casual"];
+const AUDIENCE_OPTIONS = ["Gen Z", "Professionals", "Students"];
 
 const ANGLE_URL_KEY: Record<StyleAngle, keyof StyleFormValues> = {
   front: "imageUrl",
@@ -218,6 +242,65 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
         </Field>
       </div>
 
+      <Field label="Category" hint="e.g. Fade, Korean, Classic — the main browse filter">
+        <input
+          value={values.category}
+          onChange={(e) => set("category", e.target.value)}
+          className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[15px] outline-none focus:border-accent"
+        />
+      </Field>
+
+      <div className="grid grid-cols-3 gap-3">
+        <SelectField
+          label="Length category"
+          value={values.lengthCategory}
+          onChange={(v) => set("lengthCategory", v)}
+          options={LENGTH_CATEGORY_OPTIONS}
+        />
+        <SelectField
+          label="Maintenance"
+          value={values.maintenance}
+          onChange={(v) => set("maintenance", v)}
+          options={MAINTENANCE_OPTIONS}
+        />
+        <SelectField
+          label="Beard pairing"
+          value={values.beardPairing}
+          onChange={(v) => set("beardPairing", v)}
+          options={BEARD_PAIRING_OPTIONS}
+        />
+      </div>
+
+      <MultiSelectPills
+        label="Hair texture compatibility"
+        hint="A style that works on straight hair often looks different on curly"
+        value={values.textureCompat}
+        onChange={(v) => set("textureCompat", v)}
+        options={TEXTURE_OPTIONS}
+      />
+
+      <MultiSelectPills
+        label="Hair thickness / density"
+        value={values.density}
+        onChange={(v) => set("density", v)}
+        options={DENSITY_OPTIONS}
+      />
+
+      <MultiSelectPills
+        label="Occasion"
+        value={values.occasion}
+        onChange={(v) => set("occasion", v)}
+        options={OCCASION_OPTIONS}
+      />
+
+      <MultiSelectPills
+        label="Target audience"
+        hint="Mostly for marketing/content"
+        value={values.targetAudience}
+        onChange={(v) => set("targetAudience", v)}
+        options={AUDIENCE_OPTIONS}
+      />
+
       <Field label="Inspired by" hint="Optional credit shown on the cut card, e.g. a barber or stylist name">
         <input
           value={values.inspiredBy}
@@ -275,5 +358,89 @@ function Field({
       {children}
       {hint && <span className="text-xs text-muted">{hint}</span>}
     </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[15px] outline-none focus:border-accent"
+      >
+        <option value="">—</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function MultiSelectPills({
+  label,
+  hint,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  const selected = value
+    ? value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  function toggle(option: string) {
+    const next = selected.includes(option)
+      ? selected.filter((s) => s !== option)
+      : [...selected, option];
+    onChange(next.join(","));
+  }
+
+  return (
+    <div>
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((option) => {
+          const active = selected.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggle(option)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                active
+                  ? "border-accent bg-accent text-white"
+                  : "border-border bg-surface text-muted hover:bg-accent-light"
+              }`}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+    </div>
   );
 }

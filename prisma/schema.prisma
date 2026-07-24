@@ -53,6 +53,14 @@ model StyleCatalog {
   guardNumber  String?
   lengthMm     String?
   fadeType     String?
+  category         String? // e.g. Fade, Korean, Classic — the main browse filter
+  textureCompat    String? // comma-separated: Straight,Wavy,Curly,Coily
+  density          String? // comma-separated: Thin,Medium,Thick
+  lengthCategory   String? // Very Short,Short,Medium,Long — rough browse category, separate from lengthMm
+  maintenance      String? // Low,Medium,High — how often it needs a trim to hold shape
+  beardPairing     String? // None,Optional,Required
+  occasion         String? // comma-separated: Daily,Professional,Party,Casual
+  targetAudience   String? // comma-separated: Gen Z,Professionals,Students
   imageUrl     String? // front angle
   leftImageUrl  String?
   rightImageUrl String?
