@@ -145,13 +145,21 @@ function pickFaceShape(seed: number): FaceShape {
   return FACE_SHAPES[seed % FACE_SHAPES.length];
 }
 
-export async function analyzeUserImage(image: Blob | string): Promise<HairAnalysisResult> {
+export async function analyzeUserImage(
+  image: Blob | string | (Blob | string)[]
+): Promise<HairAnalysisResult> {
   // Simulates model inference latency — real integration replaces this
-  // with the actual async model call(s).
+  // with the actual async model call(s) across all captured angles (front,
+  // left, right, jaw — see FaceScanner). The mock only uses their combined
+  // size as a seed; a real model would use each angle for something
+  // specific (sides for hairline, jaw for beard/growth pattern).
   await new Promise((resolve) => setTimeout(resolve, 400));
 
-  const seed =
-    typeof image === "string" ? image.length : Math.round(image.size + Date.now() / 1000);
+  const images = Array.isArray(image) ? image : [image];
+  const seed = images.reduce(
+    (sum, img) => sum + (typeof img === "string" ? img.length : Math.round(img.size)),
+    0
+  );
   const faceShape = pickFaceShape(seed);
   const confidence = 88 + (seed % 10); // 88-97%, reads as "confident" without ever being 100%
 

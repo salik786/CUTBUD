@@ -9,48 +9,36 @@ import { HairAnalysisCard } from "@/components/HairAnalysisCard";
 import { RecommendationScore } from "@/components/RecommendationScore";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { BackLink } from "@/components/BackLink";
-import { detectFace } from "@/lib/faceDetection";
 import type { HairAnalysisResult } from "@/services/hairAnalysis";
 
-type Phase = "capture" | "verifying" | "analyzing" | "results";
+type Phase = "capture" | "analyzing" | "results";
 
 export function HairAnalysisFlow({ visitId }: { visitId: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("capture");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [captureError, setCaptureError] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [result, setResult] = useState<HairAnalysisResult | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function handleCapture(dataUrl: string) {
-    setPhoto(dataUrl);
-    setCaptureError("");
-    setPhase("verifying");
-
-    const check = await detectFace(dataUrl);
-    if (check.supported && check.faceCount === 0) {
-      setCaptureError("We couldn't detect a face in that photo — make sure your face is clearly visible and centered, then try again.");
-      setPhase("capture");
-      return;
-    }
-
-    setPhase("analyzing");
-  }
-
-  if (phase === "capture" || phase === "verifying") {
+  // FaceScanner owns the whole multi-shot capture + per-shot verification
+  // (front, left, right, jaw) and only calls this once all four are
+  // collected — see src/components/FaceScanner.tsx.
+  if (phase === "capture") {
     return (
       <FaceScanner
-        onCapture={handleCapture}
-        verifying={phase === "verifying"}
-        errorMessage={captureError}
+        onComplete={(captured) => {
+          setPhotos(captured);
+          setPhase("analyzing");
+        }}
       />
     );
   }
 
-  if (phase === "analyzing" && photo) {
+  if (phase === "analyzing" && photos.length > 0) {
     return (
       <AIAnalysisAnimation
-        photo={photo}
+        photo={photos[0]}
+        allPhotos={photos}
         onComplete={(r) => {
           setResult(r);
           setPhase("results");

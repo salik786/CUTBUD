@@ -27,9 +27,13 @@ const LANDMARKS = Array.from({ length: 18 }, (_, i) => ({
 
 export function AIAnalysisAnimation({
   photo,
+  allPhotos,
   onComplete,
 }: {
   photo: string;
+  /** All captured angles (front/left/right/jaw) — analyzeUserImage uses the
+   * full set; only `photo` (front) is shown in the scanning visual. */
+  allPhotos?: string[];
   onComplete: (result: HairAnalysisResult) => void;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
@@ -49,7 +53,7 @@ export function AIAnalysisAnimation({
 
     let cancelled = false;
     (async () => {
-      const result = await analyzeUserImage(photo);
+      const result = await analyzeUserImage(allPhotos && allPhotos.length > 0 ? allPhotos : photo);
       const elapsed = Date.now() - start;
       const remaining = Math.max(0, totalMs - elapsed);
       setTimeout(() => {
@@ -115,6 +119,20 @@ export function AIAnalysisAnimation({
         />
       </div>
 
+      {allPhotos && allPhotos.length > 1 && (
+        <div className="mt-3 flex gap-2">
+          {allPhotos.map((p, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={p}
+              alt=""
+              className={`h-10 w-10 rounded-lg object-cover ${p === photo ? "opacity-100 ring-2 ring-accent" : "opacity-50"}`}
+            />
+          ))}
+        </div>
+      )}
+
       {/* progress ring + percentage */}
       <div className="mt-8 flex items-center gap-3">
         <svg viewBox="0 0 44 44" className="h-11 w-11 -rotate-90">
@@ -136,7 +154,11 @@ export function AIAnalysisAnimation({
       </div>
 
       <div className="mt-6 w-full max-w-sm">
-        <AnimatePresence mode="wait">
+        {/* Default mode, not "wait" — the step index is driven by a plain
+            setInterval, so the next step's text must appear immediately
+            regardless of whether the previous card's exit transition has
+            actually finished. */}
+        <AnimatePresence>
           <motion.div
             key={stepIndex}
             initial={{ opacity: 0, y: 8 }}

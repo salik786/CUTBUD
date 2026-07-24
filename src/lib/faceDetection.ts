@@ -14,6 +14,13 @@
  * as *a* face — so this adds geometric sanity checks on top of the raw
  * detection.
  *
+ * The capture flow takes multiple angles (front, left, right, jaw/beard) so
+ * a future real analysis model has actual material to work with — hairline
+ * shape from the sides, growth pattern from the jaw shot, etc. Each angle
+ * needs a different validation `pose`: the frontal yaw/symmetry check that
+ * (correctly) rejects a turned face for the "front" shot would also reject
+ * every valid left/right photo, since being turned is the whole point there.
+ *
  * The WASM runtime + model (~200KB, short-range detector) load lazily from
  * Google's public MediaPipe CDN on first use and are cached for the rest of
  * the session — there's a brief delay (shown as "Checking your photo…") the
@@ -39,10 +46,18 @@ const KP_LEFT_EYE = 1;
 const KP_NOSE = 2;
 const KP_MOUTH = 3;
 
-const MIN_SCORE = 0.8;
 const MIN_FACE_HEIGHT_FRACTION = 0.15; // face must fill a reasonable amount of the frame
-const MIN_EYE_SEPARATION_FRACTION = 0.28; // relative to bounding box width
-const MAX_YAW_ASYMMETRY = 1.6; // max ratio between nose-to-each-eye distances before rejecting as turned
+const MIN_EYE_SEPARATION_FRACTION = 0.28; // relative to bounding box width, frontal only
+const MAX_YAW_ASYMMETRY = 1.6; // max ratio between nose-to-each-eye distances, frontal only
+
+// BlazeFace short-range was trained mostly on near-frontal faces — it's
+// noticeably less confident on a genuine profile shot, so a true side photo
+// needs a lower bar than a front-on one or it gets rejected for the wrong
+// reason (low score, not "no face").
+const MIN_SCORE_FRONTAL = 0.8;
+const MIN_SCORE_PROFILE = 0.55;
+
+export type FacePose = "frontal" | "profile";
 
 export type FaceCheckResult =
   | { supported: true; faceCount: number }
@@ -56,7 +71,7 @@ function getDetector(): Promise<FaceDetector> {
       FaceDetector.createFromOptions(fileset, {
         baseOptions: { modelAssetPath: MODEL_URL },
         runningMode: "IMAGE",
-        minDetectionConfidence: MIN_SCORE,
+        minDetectionConfidence: MIN_SCORE_PROFILE, // lowest of the two — per-pose filtering happens below
       })
     );
   }
@@ -73,27 +88,39 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Beyond "a face was detected somewhere": is this a usable, roughly
- * front-facing shot? Rejects faces that are too small/distant, faces tilted
- * back (chin toward camera, eyes/nose/mouth no longer in normal vertical
- * order), and — the case a plain eye-separation check missed — faces
- * *turned* left or right. BlazeFace still places two plausible-looking eye
- * keypoints even on a profile/three-quarter shot, so a simple "are two eyes
- * present and spread apart" check isn't enough; this adds a yaw check
- * (nose-to-each-eye horizontal distance should be roughly symmetric on a
- * face actually looking at the camera — a turned head makes it lopsided).
+ * Beyond "a face was detected somewhere": is this a usable shot for the
+ * requested pose?
+ *
+ * `frontal` — rejects faces that are too small/distant, tilted back (chin
+ * toward camera, eyes/nose/mouth no longer in normal vertical order), or
+ * turned left/right (BlazeFace still places two plausible-looking eye
+ * keypoints even on a turned face, so a bare "two eyes, spread apart" check
+ * isn't enough — this adds a yaw check: the nose sits roughly midway between
+ * the eyes on a face actually facing the camera, and lopsided on a turned
+ * one).
+ *
+ * `profile` — only checks that *a* reasonably-sized, reasonably-confident
+ * face was found. There's no cheap, reliable way to assert "yes, this is
+ * specifically a left/right profile" from six keypoints — that would need
+ * real 3D pose estimation — so this deliberately doesn't try to be clever
+ * here and just guards against the same failure mode as the blank-image bug
+ * (nothing there, or something tiny/far away).
  */
 function isUsableFace(
   detection: ReturnType<FaceDetector["detect"]>["detections"][number],
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
+  pose: FacePose
 ): boolean {
   const score = detection.categories[0]?.score ?? 0;
-  if (score < MIN_SCORE) return false;
+  const minScore = pose === "frontal" ? MIN_SCORE_FRONTAL : MIN_SCORE_PROFILE;
+  if (score < minScore) return false;
 
   const box = detection.boundingBox;
   if (!box) return false;
   if (box.height / imageHeight < MIN_FACE_HEIGHT_FRACTION) return false;
+
+  if (pose === "profile") return true;
 
   const kp = detection.keypoints;
   if (!kp || kp.length < 4) return false;
@@ -129,7 +156,10 @@ function isUsableFace(
   return true;
 }
 
-export async function detectFace(imageDataUrl: string): Promise<FaceCheckResult> {
+export async function detectFace(
+  imageDataUrl: string,
+  pose: FacePose = "frontal"
+): Promise<FaceCheckResult> {
   if (typeof window === "undefined") {
     return { supported: false, faceCount: null };
   }
@@ -137,7 +167,9 @@ export async function detectFace(imageDataUrl: string): Promise<FaceCheckResult>
   try {
     const [detector, img] = await Promise.all([getDetector(), loadImage(imageDataUrl)]);
     const result = detector.detect(img);
-    const usableCount = result.detections.filter((d) => isUsableFace(d, img.width, img.height)).length;
+    const usableCount = result.detections.filter((d) =>
+      isUsableFace(d, img.width, img.height, pose)
+    ).length;
     return { supported: true, faceCount: usableCount };
   } catch {
     // WASM/model failed to load (offline, blocked CDN, unsupported

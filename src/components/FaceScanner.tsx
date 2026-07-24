@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { detectFace } from "@/lib/faceDetection";
+import { motion, AnimatePresence } from "framer-motion";
+import { detectFace, type FacePose } from "@/lib/faceDetection";
 
 type Indicator = "faceDetected" | "lighting" | "quality" | "hairVisible";
 type CameraState = "idle" | "requesting" | "streaming" | "error";
@@ -14,28 +14,62 @@ const INDICATOR_LABELS: Record<Indicator, string> = {
   hairVisible: "Hair visibility",
 };
 
-export function FaceScanner({
-  onCapture,
-  verifying = false,
-  errorMessage: verifyError = "",
-}: {
-  onCapture: (dataUrl: string) => void;
-  /** True while the parent is running detectFace() on a just-captured photo. */
-  verifying?: boolean;
-  /** Set by the parent when the captured photo failed face verification. */
-  errorMessage?: string;
-}) {
+interface ShotStep {
+  id: string;
+  title: string;
+  subtitle: string;
+  pose: FacePose;
+}
+
+// Four angles for a better-informed recommendation later (front for face
+// shape, both sides for hairline/ear position, jaw for beard/growth
+// pattern) — see src/lib/faceDetection.ts for why "left"/"right" use a
+// different, more lenient validation than "front"/"jaw".
+const STEPS: ShotStep[] = [
+  {
+    id: "front",
+    title: "Look straight ahead",
+    subtitle: "Position your face inside the frame",
+    pose: "frontal",
+  },
+  {
+    id: "left",
+    title: "Turn slightly to your left",
+    subtitle: "Show your hairline and the side of your head",
+    pose: "profile",
+  },
+  {
+    id: "right",
+    title: "Turn slightly to your right",
+    subtitle: "Show your hairline and the side of your head",
+    pose: "profile",
+  },
+  {
+    id: "jaw",
+    title: "Tilt your chin down slightly",
+    subtitle: "Show your jawline and beard area clearly",
+    pose: "frontal",
+  },
+];
+
+export function FaceScanner({ onComplete }: { onComplete: (photos: string[]) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraState, setCameraState] = useState<CameraState>("idle");
   const [cameraErrorMessage, setCameraErrorMessage] = useState("");
+  const [stepIndex, setStepIndex] = useState(0);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [verifying, setVerifying] = useState(false);
+  const [shotError, setShotError] = useState("");
   const [indicators, setIndicators] = useState<Record<Indicator, boolean>>({
     faceDetected: false,
     lighting: false,
     quality: false,
     hairVisible: false,
   });
+
+  const step = STEPS[stepIndex];
 
   useEffect(() => {
     return () => {
@@ -94,13 +128,11 @@ export function FaceScanner({
 
   // Lighting / image quality / hair visibility can't be verified for real
   // without a heavier model, so those stay simulated for the "premium feel"
-  // the brief asks for. "Face detected" is real when the browser's native
-  // MediaPipe FaceDetector (see src/lib/faceDetection.ts) polls the live
-  // video every 900ms and drives the "Face detected" indicator for real. If
-  // its WASM/model fails to load (offline, blocked CDN) the first poll
-  // reports unsupported and this falls back to a simulated reveal instead,
-  // same as the other three indicators, which aren't independently
-  // verifiable without a heavier model.
+  // the brief asks for. "Face detected" is real — MediaPipe FaceDetector
+  // (see src/lib/faceDetection.ts) polls the live video every 900ms. If its
+  // WASM/model fails to load (offline, blocked CDN) the first poll reports
+  // unsupported and this falls back to a simulated reveal instead, same as
+  // the other three indicators.
   useEffect(() => {
     if (cameraState !== "streaming") return;
 
@@ -120,7 +152,7 @@ export function FaceScanner({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.drawImage(video, 0, 0);
-      const check = await detectFace(canvas.toDataURL("image/jpeg", 0.6));
+      const check = await detectFace(canvas.toDataURL("image/jpeg", 0.6), step.pose);
       if (cancelled) return;
       if (check.supported) {
         setIndicators((prev) => ({ ...prev, faceDetected: check.faceCount > 0 }));
@@ -138,7 +170,35 @@ export function FaceScanner({
       clearInterval(poll);
       if (fallbackTimer) clearTimeout(fallbackTimer);
     };
-  }, [cameraState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraState, stepIndex]);
+
+  async function handleShot(dataUrl: string) {
+    setVerifying(true);
+    setShotError("");
+
+    const check = await detectFace(dataUrl, step.pose);
+    if (check.supported && check.faceCount === 0) {
+      const hint =
+        step.pose === "frontal"
+          ? "make sure your face is clearly visible and centered"
+          : "make sure your face is still visible as you turn";
+      setShotError(`We couldn't verify that shot — ${hint}, then try again.`);
+      setVerifying(false);
+      return;
+    }
+
+    setVerifying(false);
+    const next = [...photos, dataUrl];
+    setPhotos(next);
+    setIndicators({ faceDetected: false, lighting: false, quality: false, hairVisible: false });
+
+    if (stepIndex + 1 < STEPS.length) {
+      setStepIndex(stepIndex + 1);
+    } else {
+      onComplete(next);
+    }
+  }
 
   function captureFromVideo() {
     const video = videoRef.current;
@@ -151,21 +211,21 @@ export function FaceScanner({
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1); // mirror, since the preview is mirrored for a selfie feel
     ctx.drawImage(video, 0, 0);
-    onCapture(canvas.toDataURL("image/jpeg", 0.9));
+    handleShot(canvas.toDataURL("image/jpeg", 0.9));
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => onCapture(reader.result as string);
+    reader.onload = () => handleShot(reader.result as string);
     reader.readAsDataURL(file);
+    e.target.value = "";
   }
 
   const allGood = Object.values(indicators).every(Boolean);
   const streaming = cameraState === "streaming";
   const busy = verifying || cameraState === "requesting";
-  const displayError = verifyError || (cameraState === "error" ? cameraErrorMessage : "");
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-hero-bg text-white">
@@ -186,15 +246,40 @@ export function FaceScanner({
       <div className="absolute inset-0 bg-black/30" aria-hidden />
 
       <div className="relative flex flex-1 flex-col px-6 py-8">
-        <p className="fade-up text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-          AI Hair Analysis
+        <div className="fade-up mx-auto flex w-full max-w-xs gap-1.5">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.id}
+              className={`h-1 flex-1 rounded-full ${i <= photos.length ? "bg-accent" : "bg-white/20"}`}
+            />
+          ))}
+        </div>
+
+        <p
+          className="fade-up mt-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/60"
+          style={{ animationDelay: "40ms" }}
+        >
+          Shot {stepIndex + 1} of {STEPS.length}
         </p>
-        <h1 className="fade-up mt-2 text-center text-xl font-bold" style={{ animationDelay: "60ms" }}>
-          Position your face inside the frame
-        </h1>
-        <p className="fade-up mt-1 text-center text-sm text-white/60" style={{ animationDelay: "100ms" }}>
-          Make sure your hair is visible · Use good lighting
-        </p>
+
+        {/* mode="wait" would delay mounting the new step's title until the
+            previous one's exit transition finishes — harmless if animations
+            run normally, but it means step advancement is silently gated on
+            an animation completing rather than on state, which is a bad
+            dependency to have (e.g. a throttled/backgrounded tab). Default
+            mode lets the new one appear immediately regardless. */}
+        <AnimatePresence>
+          <motion.div
+            key={step.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25 }}
+          >
+            <h1 className="mt-2 text-center text-xl font-bold">{step.title}</h1>
+            <p className="mt-1 text-center text-sm text-white/60">{step.subtitle}</p>
+          </motion.div>
+        </AnimatePresence>
 
         <div className="relative mx-auto mt-8 flex flex-1 items-center justify-center">
           <motion.div
@@ -251,8 +336,10 @@ export function FaceScanner({
           ))}
         </div>
 
-        {displayError && (
-          <p className="fade-up mt-4 text-center text-xs text-[#ff8fa3]">{displayError}</p>
+        {(shotError || (cameraState === "error" && cameraErrorMessage)) && (
+          <p className="fade-up mt-4 text-center text-xs text-[#ff8fa3]">
+            {shotError || cameraErrorMessage}
+          </p>
         )}
 
         <div className="fade-up mt-8 flex flex-col gap-3" style={{ animationDelay: "180ms" }}>
@@ -288,7 +375,7 @@ export function FaceScanner({
         </div>
 
         <p className="fade-up mt-5 text-center text-[11px] text-white/40" style={{ animationDelay: "220ms" }}>
-          Your photo is analyzed on this device and is never uploaded or stored.
+          Your photos are analyzed on this device and are never uploaded or stored.
         </p>
       </div>
     </div>
