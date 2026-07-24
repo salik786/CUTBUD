@@ -1,10 +1,50 @@
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { getDisplayImageUrl } from "@/lib/styleImage";
+import { buildAdminStyleWhere, buildAdminOrderBy } from "@/lib/adminStyleFilters";
+import { StylesTable } from "./StylesTable";
 
-export default async function AdminStylesPage() {
-  const styles = await prisma.styleCatalog.findMany({ orderBy: { name: "asc" } });
+const PAGE_SIZE = 25;
+
+export default async function AdminStylesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    model?: string;
+    faceShape?: string;
+    status?: string;
+    sort?: string;
+    dir?: string;
+    page?: string;
+  }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const where = buildAdminStyleWhere(sp);
+  const orderBy = buildAdminOrderBy(sp.sort, sp.dir);
+
+  const [styles, total, categoryRows, modelRows] = await Promise.all([
+    prisma.styleCatalog.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.styleCatalog.count({ where }),
+    prisma.styleCatalog.findMany({
+      where: { category: { not: null } },
+      select: { category: true },
+      distinct: ["category"],
+      orderBy: { category: "asc" },
+    }),
+    prisma.styleCatalog.findMany({
+      where: { modelId: { not: null } },
+      select: { modelId: true },
+      distinct: ["modelId"],
+      orderBy: { modelId: "asc" },
+    }),
+  ]);
 
   return (
     <div>
@@ -18,33 +58,14 @@ export default async function AdminStylesPage() {
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-2">
-        {styles.map((style) => (
-          <Link
-            key={style.id}
-            href={`/admin/styles/${style.id}`}
-            className="flex items-center gap-4 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-page"
-          >
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-page">
-              {getDisplayImageUrl(style) && (
-                <Image src={getDisplayImageUrl(style)!} alt="" fill className="object-cover" sizes="56px" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{style.name}</p>
-              <p className="truncate text-sm text-muted">{style.faceShapeFit}</p>
-            </div>
-            <span
-              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                style.active ? "bg-emerald-100 text-emerald-700" : "bg-border text-muted"
-              }`}
-            >
-              {style.active ? "Active" : "Inactive"}
-            </span>
-          </Link>
-        ))}
-        {styles.length === 0 && <p className="text-sm text-muted">No styles yet.</p>}
-      </div>
+      <StylesTable
+        styles={styles}
+        total={total}
+        page={page}
+        pageSize={PAGE_SIZE}
+        categories={categoryRows.map((c) => c.category!).filter(Boolean)}
+        models={modelRows.map((m) => m.modelId!).filter(Boolean)}
+      />
     </div>
   );
 }

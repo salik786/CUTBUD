@@ -81,6 +81,13 @@ model StyleCatalog {
   backPrompt   String?
   tryonPrompt  String?
 
+  modelId      String? // e.g. MODEL003 — the Higgsfield model persona used for this style's photos
+  trendScore   Int? // 0-100, from the spreadsheet's trend_score — used for sorting in admin
+  featured     Boolean  @default(false) // admin-controlled, not spreadsheet-sourced
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   generations  StyleGeneration[]
 
   @@map("style_catalog")

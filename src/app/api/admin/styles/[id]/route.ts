@@ -35,6 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     rightPrompt,
     backPrompt,
     tryonPrompt,
+    modelId,
+    trendScore,
+    featured,
     active,
   } = body;
 
@@ -60,13 +63,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       leftImageUrl,
       rightImageUrl,
       backImageUrl,
-      displayAngle: displayAngle || "front",
+      // Only touch displayAngle if the caller actually sent it — a partial
+      // PATCH (e.g. the table's inline Active/Featured toggles) must not
+      // silently reset it back to "front".
+      ...(displayAngle !== undefined ? { displayAngle: displayAngle || "front" } : {}),
       inspiredBy,
       frontPrompt,
       leftPrompt,
       rightPrompt,
       backPrompt,
       tryonPrompt,
+      modelId,
+      trendScore,
+      featured,
       active,
     },
   });

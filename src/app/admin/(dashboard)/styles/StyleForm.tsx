@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { StyleCatalog } from "@prisma/client";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { STYLE_ANGLES, type StyleAngle } from "@/lib/styleImage";
 import { ImageUploader } from "../ImageUploader";
@@ -34,6 +35,9 @@ export interface StyleFormValues {
   rightPrompt: string;
   backPrompt: string;
   tryonPrompt: string;
+  modelId: string;
+  trendScore: string;
+  featured: boolean;
   active: boolean;
 }
 
@@ -64,8 +68,50 @@ const EMPTY: StyleFormValues = {
   rightPrompt: "",
   backPrompt: "",
   tryonPrompt: "",
+  modelId: "",
+  trendScore: "",
+  featured: false,
   active: true,
 };
+
+// Shared by the [id] edit page and the table's side drawer so the Prisma
+// row -> form-values mapping (all fields are strings here, even nullable
+// DB ones) can't drift between the two entry points.
+export function styleToFormValues(style: StyleCatalog): StyleFormValues {
+  return {
+    id: style.id,
+    name: style.name,
+    description: style.description,
+    basePrompt: style.basePrompt,
+    faceShapeFit: style.faceShapeFit,
+    guardNumber: style.guardNumber ?? "",
+    lengthMm: style.lengthMm ?? "",
+    fadeType: style.fadeType ?? "",
+    category: style.category ?? "",
+    textureCompat: style.textureCompat ?? "",
+    density: style.density ?? "",
+    lengthCategory: style.lengthCategory ?? "",
+    maintenance: style.maintenance ?? "",
+    beardPairing: style.beardPairing ?? "",
+    occasion: style.occasion ?? "",
+    targetAudience: style.targetAudience ?? "",
+    imageUrl: style.imageUrl ?? "",
+    leftImageUrl: style.leftImageUrl ?? "",
+    rightImageUrl: style.rightImageUrl ?? "",
+    backImageUrl: style.backImageUrl ?? "",
+    displayAngle: style.displayAngle,
+    inspiredBy: style.inspiredBy ?? "",
+    frontPrompt: style.frontPrompt ?? "",
+    leftPrompt: style.leftPrompt ?? "",
+    rightPrompt: style.rightPrompt ?? "",
+    backPrompt: style.backPrompt ?? "",
+    tryonPrompt: style.tryonPrompt ?? "",
+    modelId: style.modelId ?? "",
+    trendScore: style.trendScore != null ? String(style.trendScore) : "",
+    featured: style.featured,
+    active: style.active,
+  };
+}
 
 const TEXTURE_OPTIONS = ["Straight", "Wavy", "Curly", "Coily"];
 const DENSITY_OPTIONS = ["Thin", "Medium", "Thick"];
@@ -89,7 +135,18 @@ const ANGLE_PROMPT_KEY: Record<StyleAngle, "frontPrompt" | "leftPrompt" | "right
   back: "backPrompt",
 };
 
-export function StyleForm({ initial }: { initial?: StyleFormValues }) {
+export function StyleForm({
+  initial,
+  onSaved,
+  onCancel,
+  onDeleted,
+}: {
+  initial?: StyleFormValues;
+  /** Provided when embedded in the table's side drawer instead of a standalone page. */
+  onSaved?: () => void;
+  onCancel?: () => void;
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
   const [values, setValues] = useState<StyleFormValues>(initial ?? EMPTY);
   const [saving, setSaving] = useState(false);
@@ -108,7 +165,7 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
       const res = await fetch(values.id ? `/api/admin/styles/${values.id}` : "/api/admin/styles", {
         method: values.id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, trendScore: values.trendScore === "" ? null : Number(values.trendScore) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -116,7 +173,11 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
         setSaving(false);
         return;
       }
-      router.push("/admin/styles");
+      if (onSaved) {
+        onSaved();
+      } else {
+        router.push("/admin/styles");
+      }
       router.refresh();
     } catch {
       setError("Something went wrong. Try again.");
@@ -136,7 +197,11 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
       setDeleting(false);
       return;
     }
-    router.push("/admin/styles");
+    if (onDeleted) {
+      onDeleted();
+    } else {
+      router.push("/admin/styles");
+    }
     router.refresh();
   }
 
@@ -330,16 +395,46 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
         />
       </Field>
 
-      {values.id && (
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Model ID" hint="Higgsfield model persona, e.g. MODEL003">
+          <input
+            value={values.modelId}
+            onChange={(e) => set("modelId", e.target.value)}
+            className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[15px] outline-none focus:border-accent"
+          />
+        </Field>
+        <Field label="Trend score" hint="0-100, used for sorting in admin">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={values.trendScore}
+            onChange={(e) => set("trendScore", e.target.value)}
+            className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[15px] outline-none focus:border-accent"
+          />
+        </Field>
+      </div>
+
+      <div className="flex flex-wrap gap-4">
+        {values.id && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={values.active}
+              onChange={(e) => set("active", e.target.checked)}
+            />
+            Active (visible in recommendations)
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
-            checked={values.active}
-            onChange={(e) => set("active", e.target.checked)}
+            checked={values.featured}
+            onChange={(e) => set("featured", e.target.checked)}
           />
-          Active (visible in recommendations)
+          Featured
         </label>
-      )}
+      </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
@@ -349,6 +444,15 @@ export function StyleForm({ initial }: { initial?: StyleFormValues }) {
             {saving ? "Saving…" : values.id ? "Save Changes" : "Create Style"}
           </PrimaryButton>
         </div>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm font-medium text-muted hover:underline"
+          >
+            Cancel
+          </button>
+        )}
         {values.id && (
           <button
             type="button"

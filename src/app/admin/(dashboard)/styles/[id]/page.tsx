@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { StyleForm } from "../StyleForm";
+import { StyleForm, styleToFormValues } from "../StyleForm";
 
 export default async function EditStylePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,38 +10,7 @@ export default async function EditStylePage({ params }: { params: Promise<{ id: 
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Edit Style</h1>
-      <StyleForm
-        initial={{
-          id: style.id,
-          name: style.name,
-          description: style.description,
-          basePrompt: style.basePrompt,
-          faceShapeFit: style.faceShapeFit,
-          guardNumber: style.guardNumber ?? "",
-          lengthMm: style.lengthMm ?? "",
-          fadeType: style.fadeType ?? "",
-          category: style.category ?? "",
-          textureCompat: style.textureCompat ?? "",
-          density: style.density ?? "",
-          lengthCategory: style.lengthCategory ?? "",
-          maintenance: style.maintenance ?? "",
-          beardPairing: style.beardPairing ?? "",
-          occasion: style.occasion ?? "",
-          targetAudience: style.targetAudience ?? "",
-          imageUrl: style.imageUrl ?? "",
-          leftImageUrl: style.leftImageUrl ?? "",
-          rightImageUrl: style.rightImageUrl ?? "",
-          backImageUrl: style.backImageUrl ?? "",
-          displayAngle: style.displayAngle,
-          inspiredBy: style.inspiredBy ?? "",
-          frontPrompt: style.frontPrompt ?? "",
-          leftPrompt: style.leftPrompt ?? "",
-          rightPrompt: style.rightPrompt ?? "",
-          backPrompt: style.backPrompt ?? "",
-          tryonPrompt: style.tryonPrompt ?? "",
-          active: style.active,
-        }}
-      />
+      <StyleForm initial={styleToFormValues(style)} />
     </div>
   );
 }

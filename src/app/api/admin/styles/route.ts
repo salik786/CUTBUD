@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
     rightPrompt,
     backPrompt,
     tryonPrompt,
+    modelId,
+    trendScore,
+    featured,
   } = body;
 
   if (!name || !description || !basePrompt || !faceShapeFit) {
@@ -79,6 +82,9 @@ export async function POST(req: NextRequest) {
       rightPrompt,
       backPrompt,
       tryonPrompt,
+      modelId,
+      trendScore,
+      featured,
     },
   });
   return NextResponse.json({ style });

@@ -82,3 +82,12 @@ html, body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+.fade-in-drawer {
+  animation: slide-in-drawer var(--duration-entrance) var(--ease-entrance) both;
+}
+
+@keyframes slide-in-drawer {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}

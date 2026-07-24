@@ -137,6 +137,8 @@ def build_row(r: dict, face_shapes: dict, prompts: dict) -> dict:
         "occasion": split_pipe(r.get("occasion_tags")),
         "targetAudience": split_pipe(r.get("target_audience")),
         "inspiredBy": r.get("inspiration"),
+        "modelId": r.get("model_id"),
+        "trendScore": int(r["trend_score"]) if r.get("trend_score") not in (None, "") else None,
         "active": status == "active",
     }
     data.update(prompts.get(hid, {}))
@@ -165,6 +167,8 @@ UPDATE_COLUMNS = [
     "occasion",
     "targetAudience",
     "inspiredBy",
+    "modelId",
+    "trendScore",
     "active",
     "frontPrompt",
     "leftPrompt",
