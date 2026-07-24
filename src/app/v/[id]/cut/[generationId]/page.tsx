@@ -1,27 +1,9 @@
 import { notFound } from "next/navigation";
-import type { StyleCatalog } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { Stepper } from "@/components/Stepper";
-import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { BackLink } from "@/components/BackLink";
 import { ShowToBarberButton } from "./ShowToBarberButton";
-
-type Angle = "Front" | "Left" | "Right" | "Back";
-const ANGLES: Angle[] = ["Front", "Left", "Right", "Back"];
-
-function angleImage(style: StyleCatalog, angle: Angle): string | null {
-  switch (angle) {
-    case "Front":
-      return style.imageUrl;
-    case "Left":
-      return style.leftImageUrl;
-    case "Right":
-      return style.rightImageUrl;
-    case "Back":
-      return style.backImageUrl;
-  }
-}
+import { CutCardGallery } from "./CutCardGallery";
 
 export default async function CutCardPage({
   params,
@@ -46,11 +28,7 @@ export default async function CutCardPage({
     <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col px-6 py-8">
       <BackLink href={`/v/${visit.id}/recommendations`} />
 
-      <div className="mt-4">
-        <Stepper step={3} />
-      </div>
-
-      <div className="fade-up mt-8 flex items-start justify-between" style={{ animationDelay: "60ms" }}>
+      <div className="fade-up mt-6 flex items-start justify-between" style={{ animationDelay: "60ms" }}>
         <div>
           <h1 className="text-[1.75rem] font-bold tracking-tight">{style.name}</h1>
           <p className="mt-0.5 text-[15px] text-muted">{style.fadeType}</p>
@@ -74,24 +52,14 @@ export default async function CutCardPage({
         </div>
       </div>
 
-      <div className="fade-up mt-5" style={{ animationDelay: "100ms" }}>
-        <PhotoPlaceholder
-          src={style.imageUrl}
-          label="Front reference"
-          className="aspect-[4/3] w-full"
-        />
-      </div>
-
-      <div className="fade-up mt-3 grid grid-cols-4 gap-2" style={{ animationDelay: "140ms" }}>
-        {ANGLES.map((angle) => (
-          <div key={angle} className="relative overflow-hidden rounded-xl">
-            <PhotoPlaceholder src={angleImage(style, angle)} className="aspect-square w-full" />
-            <span className="absolute inset-x-0 bottom-0 bg-ink/60 py-0.5 text-center text-[9px] uppercase tracking-wide text-white">
-              {angle}
-            </span>
-          </div>
-        ))}
-      </div>
+      <CutCardGallery
+        images={{
+          Front: style.imageUrl,
+          Left: style.leftImageUrl,
+          Right: style.rightImageUrl,
+          Back: style.backImageUrl,
+        }}
+      />
 
       <div className="fade-up mt-6 rounded-2xl border border-border bg-surface p-4" style={{ animationDelay: "180ms" }}>
         <dl className="divide-y divide-border text-sm">
